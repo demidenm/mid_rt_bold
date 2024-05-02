@@ -9,6 +9,7 @@ from nilearn.glm.first_level import FirstLevelModel
 import matplotlib.pyplot as plt
 from nilearn.plotting import plot_design_matrix
 
+plt.switch_backend('Agg') # turn off back end display to create plots
 
 # Getpath to Stage2 scripts
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -56,14 +57,14 @@ contrasts = [
 contrast_labs = {
     # Anticipation
     'LRew-Neut': 'LgReward - Triangle',
-    'ARew-Neut': 'LgReward + Small Reward - Triangle',
+    'ARew-Neut': 'LgReward + SmallReward - Triangle',
     'LPun-Neut': 'LgPun - Triangle',
-    'APun-Neut': 'LgPun + Small Pun - Triangle',
+    'APun-Neut': 'LgPun + SmallPun - Triangle',
 
     # Feedback
-    'ARewHit-ARewMiss': 'LgReward_hit + SmallReward_Hit - LgReward_miss + SmallReward_miss',
+    'ARewHit-ARewMiss': 'LgReward_hit + SmallReward_hit - LgReward_miss + SmallReward_miss',
     'LRewHit-LRewMiss': 'LgReward_hit - LgReward_miss',
-    'APunHit-APunMiss': 'LgPun_hit + SmallPun_Hit - LgPun_miss + SmallPun_miss',
+    'APunHit-APunMiss': 'LgPun_hit + SmallPun_hit - LgPun_miss + SmallPun_miss',
     'LPunHit-LPunMiss': 'LgPun_hit - LgPun_miss',
     'LRewHit-LNeutHit': 'LgReward_hit - Triangle_hit',
 
@@ -72,20 +73,20 @@ contrast_labs = {
 contrast_weights = {
     # Anticipation
     'LR-Neut': {'LgReward': 1,
-                'NoMoneyStake': -1},
+                'Triangle': -1},
     'AR-Neut': {'LgReward': 1, 'SmallReward': 1,
-                'NoMoneyStake': -2},
+                'Triangle': -2},
     'LP-Neut': {'LgPun': 1,
-                'NoMoneyStake': -1},
+                'Triangle': -1},
     'AP-Neut': {'LgPun': 1, 'SmallPun': 1,
-                'NoMoneyStake': -2},
+                'Triangle': -2},
 
     # Feedback
-    'ARewHit-ARewMiss': {'LgReward_hit': 1, 'SmallReward_Hit': 1,
+    'ARewHit-ARewMiss': {'LgReward_hit': 1, 'SmallReward_hit': 1,
                          'LgReward_miss': -1, 'SmallReward_miss': -1},
     'LRewHit-LRewMiss': {'LgReward_hit': 1,
                          'LgReward_miss': -1},
-    'APunHit-APunMiss': {'LgPun_hit': 1, 'SmallPun_Hit': 1,
+    'APunHit-APunMiss': {'LgPun_hit': 1, 'SmallPun_hit': 1,
                          'LgPun_miss': -1, 'SmallPun_miss': 1},
     'LPunHit-LPunMiss': {'LgPun_hit': 1,
                          'LgPun_miss': -1},
@@ -118,7 +119,6 @@ for run in runs:
                                           conf_regressors=conf_regressors, rt_model=model,
                                           hrf_model='spm', stc=False)
         # save design mat
-        plt.ioff()
         plot_design_matrix(design_matrix)
         plt.savefig(f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_mod-Cue-{model}_design-mat.png')
 
@@ -133,11 +133,11 @@ for run in runs:
         print('\t\t 3/3: From GLM model, create/save contrast beta/variance maps to output path')
         for con_name, con in contrast_labs.items():
             # calc beta
-            beta_name = f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_mod-Cue-{model}_stat-beta.nii.gz'
+            beta_name = f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_contrast-{con_name}_mod-Cue-{model}_stat-beta.nii.gz'
             beta_est = run_fmri_glm.compute_contrast(con, output_type='effect_size')
             beta_est.to_filename(beta_name)
             # Calc: variance
-            var_name = f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_mod-Cue-{model}_stat-var.nii.gz'
+            var_name = f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_contrast-{con_name}_mod-Cue-{model}_stat-var.nii.gz'
             var_est = run_fmri_glm.compute_contrast(con, output_type='effect_variance')
             var_est.to_filename(var_name)
 

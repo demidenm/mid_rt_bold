@@ -1,0 +1,64 @@
+# Define directories
+curr_dir=`pwd`
+script_dir=${curr_dir}/..
+sample=SAMPLE
+task=TASK
+run=RUN
+ses=SESSION
+type=TYPE
+model=MODEL
+sub_list=SUBJ_IDS
+mask=${curr_dir}/../brain_mask/MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz
+fixed_in=INPUT
+group_dir=OUTPUT
+tmp_dir=/tmp/${USER}/fixedeff/ses-${ses}
+group_scratch=/tmp/group/ses-${ses}/${type}
+group_out=${group_dir}/ses-${ses}/${type}
+
+[ ! -d ${group_scratch} ] && echo "group scratch directory exists" | mkdir -p ${group_scratch}
+[ ! -d ${group_out} ] && echo "group out directory exists" | mkdir -p ${group_out}
+[ ! -d ${tmp_dir}/inp ] && echo "group out directory exists" | mkdir -p ${tmp_dir}/inp
+
+# cp subjs to tmpdir
+cat ${sub_list} | while read line ; do 
+	sub=$(echo $line | awk -F" " '{ print $1 }' )
+	echo "sub: ${sub} and line ${line}"
+	if [ ${type} == 'session' ]; then
+		cp -r ${fixed_in}/ses-${ses}/${sub}/${sub}_ses-${ses}_task-${task}_*_${model}_stat-effect.nii.gz ${tmp_dir}/inp/
+	elif [ ${type} == 'run' ]; then
+		cp -r ${fixed_in}/ses-${ses}/${sub}/${sub}_ses-${ses}_task-${task}_run-0${run}*_${model}_stat-beta.nii.gz ${tmp_dir}/inp/
+	else
+		echo "Invalid type: $type"
+	fi
+done
+
+# run python script
+echo "Sample Type: ${sample}"
+echo "Run: ${type}"
+echo "Subject List: ${sub_list}"
+echo "Fixed lvl input: ${tmp_dir}"
+echo "Group scratch out: ${group_scratch}"
+echo "Group oak out: ${group_out}"
+
+python ${script_dir}/group_estimate.py \
+		--sample ${sample} \
+		--task ${task} \
+		--run ${run} \
+		--ses ${ses} \
+		--type ${type} \
+		--mask ${mask} \
+		--model ${model} \
+		--input ${tmp_dir}/inp \
+		--output ${group_scratch}
+
+grp_error=$?
+
+if [ ${grp_error} -eq 0 ]; then
+	echo "Python group level completed successfully!"
+else
+	echo "Python group level failed."
+	exit 1
+fi
+
+echo "Syncing files from scratch to analysis path. Deleted from scratch once sync'd" 
+rsync -av --remove-source-files ${group_scratch}/ ${group_out}/
