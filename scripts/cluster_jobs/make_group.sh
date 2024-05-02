@@ -10,7 +10,7 @@ subj_list=${1}
 inpfold=/scratch.global/${USER}/mid_rt_mod/firstlvl
 outfold=/scratch.global/${USER}/mid_rt_mod/group
 counter_start=0
-rt_mods=('mod-Cue-rt' 'mod-Cue-rt')
+rt_mods=('mod-Cue-rt' 'mod-Cue-None')
 
 if [ -z "$1" ]; then
         echo
