@@ -6,23 +6,6 @@ from nilearn.glm import compute_fixed_effects
 from glob import glob
 
 
-def eff_estimator(desmat, contrast_matrix):
-    """
-    [code by Jeanette Mumford]
-    Estimates the efficiency for a given design matrix for each contrast (row) of a contrast matrix
-    input:
-      desmat: design matrix
-      contrast_matrix: contrast matrix where each row the matrix corresponds to a contrast.
-          Must have same number of columns as desmat
-    output:
-      returns an efficiency for each contrast, separately.  Given in same order as contrast order in
-        contrast_matrix
-    """
-    cov_mat = contrast_matrix @ np.linalg.inv(desmat.transpose()@desmat) @ contrast_matrix.transpose()
-    var_vec = np.diag(cov_mat)
-    return 1/var_vec
-
-
 def pull_regressors(confound_path: str, regressor_type: str = 'opt1') -> pd.DataFrame:
     """
     This function is compatible with the *confounds_timeseries.tsv file exported by fMRIprep
@@ -184,7 +167,7 @@ def fixed_effect(subject: str, session: str, task_type: str,
     :param session: string-Input session label, BIDS label e.g., ses-1
     :param task_type: string-Input task label, BIDS label e.g., mid
     :param contrast_list: list of contrast types that are saved from first level
-    :param model_lab: complete string of model permutation, e.g., 'fwhm-4_mot-opt1_mod-AntMod'
+    :param model_lab: complete string of model permutation, e.g., 'mod-Cue-rt' or 'mod-Cue-None'
     :param firstlvl_indir: string-location of first level output files
     :param fixedeffect_outdir: string-location to save fixed effects
     :param save_beta: Whether to save 'effects' or beta values, default = False

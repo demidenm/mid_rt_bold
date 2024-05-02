@@ -1,4 +1,4 @@
-
+.idea
 scripts/.idea
 scripts/cluster_jobs/logs/
 scripts/cluster_jobs/batch_jobs/
@@ -6,3 +6,4 @@ scripts/__pycache__/
 scripts/cluster_jobs/subject_ids/
 scripts/cluster_jobs/*.batch
 .DS
+*.xml
