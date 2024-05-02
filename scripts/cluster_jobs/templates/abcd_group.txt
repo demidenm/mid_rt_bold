@@ -45,7 +45,6 @@ python ${script_dir}/group_estimate.py \
 		--task ${task} \
 		--run ${run} \
 		--ses ${ses} \
-		--type ${type} \
 		--mask ${mask} \
 		--model ${model} \
 		--input ${tmp_dir}/inp \
