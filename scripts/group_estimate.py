@@ -87,7 +87,9 @@ contrasts = [
     'LRew-Neut', 'ARew-Neut', 'LPun-Neut', 'APun-Neut',
     # feedback contrasts
     'ARewHit-ARewMiss', 'LRewHit-LRewMiss', 'APunHit-APunMiss',
-    'LPunHit-LPunMiss', 'LRewHit-LNeutHit'
+    'LPunHit-LPunMiss', 'LRewHit-LNeutHit',
+    # probe maps
+    'probe-base', 'rt-base'
 ]
 
 for contrast in contrasts:

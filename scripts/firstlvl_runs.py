@@ -52,7 +52,9 @@ contrasts = [
     'LRew-Neut', 'ARew-Neut', 'LPun-Neut', 'APun-Neut',
     # feedback contrasts
     'ARewHit-ARewMiss', 'LRewHit-LRewMiss', 'APunHit-APunMiss',
-    'LPunHit-LPunMiss', 'LRewHit-LNeutHit'
+    'LPunHit-LPunMiss', 'LRewHit-LNeutHit',
+    # probe maps
+    'probe-base', 'rt-base'
 ]
 contrast_labs = {
     # Anticipation
@@ -67,6 +69,10 @@ contrast_labs = {
     'APunHit-APunMiss': 'LgPun_hit + SmallPun_hit - LgPun_miss + SmallPun_miss',
     'LPunHit-LPunMiss': 'LgPun_hit - LgPun_miss',
     'LRewHit-LNeutHit': 'LgReward_hit - Triangle_hit',
+
+    #probe
+    'probe-base': 'probe',
+    'rt-base': 'probe_rt'
 
 }
 
@@ -91,7 +97,11 @@ contrast_weights = {
     'LPunHit-LPunMiss': {'LgPun_hit': 1,
                          'LgPun_miss': -1},
     'LRewHit-LNeutHit': {'LgReward_hit': 1,
-                         'Triangle_hit': -1}
+                         'Triangle_hit': -1},
+
+    # probe
+    'probe-base': {'probe': 1},
+    'rt-base': {'probe_rt': 1},
 }
 
 fwhm = 5
