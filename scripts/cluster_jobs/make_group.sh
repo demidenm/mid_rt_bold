@@ -7,20 +7,20 @@ ses=baselineYear1Arm1
 type=session # run or session
 run=1 # 1 or 2, not used here
 subj_list=${1}
-inpfold=/scratch.global/${USER}/mid_rt_model/firstlvl
-outfold=/scratch.global/${USER}/mid_rt_model/group
+inpfold=/scratch.global/${USER}/mid_rt_mod/firstlvl
+outfold=/scratch.global/${USER}/mid_rt_mod/group
 counter_start=0
-rt = ['mod-Cue-rt', 'mod-Cue-rt']
+rt_mods=('mod-Cue-rt' 'mod-Cue-None')
 
 if [ -z "$1" ]; then
         echo
 	echo "Error: Missing list. Provide subject list w 'sub-' prefix in positon 1."
         echo
 	exit 1
-
+fi
 
 n=${counter_start}
-for model in ${rt[@]} ; do
+for model in ${rt_mods[@]} ; do
 	sed -e "s|MODEL|${model}|g; \
 		s|RUN|${run}|g; \
 		s|SESSION|${ses}|g; \
@@ -29,7 +29,7 @@ for model in ${rt[@]} ; do
 		s|INPUT|${inpfold}|g; \
 		s|OUTPUT|${outfold}|g; \
 		s|SUBJ_IDS|${subj_list}|g; \
-		s|SAMPLE|${sample}|g;" ./templates/group.txt > ./batch_jobs/group${n}
+		s|SAMPLE|${sample}|g;" ./templates/abcd_group.txt > ./batch_jobs/group${n}
         n=$((n+1))
 done
 

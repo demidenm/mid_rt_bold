@@ -47,7 +47,7 @@ def group_onesample(fixedeffect_paths: list, session: str, task_type: str,
         output_type='stat'
     )
     tstat_out = f'{group_outdir}/subs-{N_maps}_ses-{session}_task-{task_type}_' \
-                f'contrast-{contrast_type}_{model_lab}_stat-residuals.nii.gz'
+                f'contrast-{contrast_type}_{model_lab}_stat-tstat.nii.gz'
     tstat_map.to_filename(tstat_out)
 
     # calculate residuals for group map
