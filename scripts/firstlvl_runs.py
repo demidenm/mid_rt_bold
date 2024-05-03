@@ -64,9 +64,9 @@ contrast_labs = {
     'APun-Neut': 'LgPun + SmallPun - Triangle',
 
     # Feedback
-    'ARewHit-ARewMiss': 'LgReward_hit + SmallReward_hit - LgReward_miss + SmallReward_miss',
+    'ARewHit-ARewMiss': 'LgReward_hit + SmallReward_hit - LgReward_miss - SmallReward_miss',
     'LRewHit-LRewMiss': 'LgReward_hit - LgReward_miss',
-    'APunHit-APunMiss': 'LgPun_hit + SmallPun_hit - LgPun_miss + SmallPun_miss',
+    'APunHit-APunMiss': 'LgPun_hit + SmallPun_hit - LgPun_miss - SmallPun_miss',
     'LPunHit-LPunMiss': 'LgPun_hit - LgPun_miss',
     'LRewHit-LNeutHit': 'LgReward_hit - Triangle_hit',
 
@@ -78,26 +78,22 @@ contrast_labs = {
 
 contrast_weights = {
     # Anticipation
-    'LR-Neut': {'LgReward': 1,
-                'Triangle': -1},
+    'LR-Neut': {'LgReward': 1, 'Triangle': -1},
     'AR-Neut': {'LgReward': 1, 'SmallReward': 1,
                 'Triangle': -2},
-    'LP-Neut': {'LgPun': 1,
-                'Triangle': -1},
+    'LP-Neut': {'LgPun': 1, 'Triangle': -1},
     'AP-Neut': {'LgPun': 1, 'SmallPun': 1,
                 'Triangle': -2},
 
     # Feedback
     'ARewHit-ARewMiss': {'LgReward_hit': 1, 'SmallReward_hit': 1,
                          'LgReward_miss': -1, 'SmallReward_miss': -1},
-    'LRewHit-LRewMiss': {'LgReward_hit': 1,
-                         'LgReward_miss': -1},
+    'LRewHit-LRewMiss': {'LgReward_hit': 1, 'LgReward_miss': -1},
+
     'APunHit-APunMiss': {'LgPun_hit': 1, 'SmallPun_hit': 1,
-                         'LgPun_miss': -1, 'SmallPun_miss': 1},
-    'LPunHit-LPunMiss': {'LgPun_hit': 1,
-                         'LgPun_miss': -1},
-    'LRewHit-LNeutHit': {'LgReward_hit': 1,
-                         'Triangle_hit': -1},
+                         'LgPun_miss': -1, 'SmallPun_miss': -1},
+    'LPunHit-LPunMiss': {'LgPun_hit': 1, 'LgPun_miss': -1},
+    'LRewHit-LNeutHit': {'LgReward_hit': 1, 'Triangle_hit': -1},
 
     # probe
     'probe-base': {'probe': 1},
