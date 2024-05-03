@@ -109,21 +109,33 @@ contrasts = [
 
 sub_rt_df = pd.read_csv(rt_file, sep=',')
 
-for contrast in contrasts:
-    # find all contrast fixed effect maps for model permutation across subjects
-    list_maps = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*'
-                            f'contrast-{contrast}_{model}_stat-effect.nii.gz'))
-    if model == 'mod-Cue-rt':
-        sub_ids = [os.path.basename(path).split('_')[0] for path in list_maps]
-        subset_df = sub_rt_df[sub_rt_df['Subject'].isin(sub_ids)].copy()
-        mean_rt = subset_df['Average_RT'].mean()
-        subset_df['Mean_Centered_RT'] = (subset_df['Average_RT'] - mean_rt).values
-        rt_vals = subset_df['Mean_Centered_RT'].values
-    elif model == 'mod-Cue-None':
-        rt_vals=None
-    else:
-        print("Model is incorrect:", model, "Should be mod-Cue-rt or mod-Cue-None")
+if model == 'mod-Cue-rt':
+    sub_ids = [os.path.basename(path).split('_')[0] for path in list_maps]
+    subset_df = sub_rt_df[sub_rt_df['Subject'].isin(sub_ids)].copy()
+    mean_rt = subset_df['Average_RT'].mean()
+    subset_df['Mean_Centered_RT'] = (subset_df['Average_RT'] - mean_rt).values
+    rt_vals = subset_df['Mean_Centered_RT'].values
+    # set list
+    contrast_list = contrasts
+    for contrast in contrast_list:
+        # find all contrast fixed effect maps for model permutation across subjects
+        list_maps = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*'
+                                f'contrast-{contrast}_{model}_stat-effect.nii.gz'))
+        group_onesample(fixedeffect_paths=list_maps, session=ses, task_type=task,
+                        contrast_type=contrast, group_outdir=scratch_out,
+                        model_lab=model, mask=brainmask, rt_array=rt_vals)
 
-    group_onesample(fixedeffect_paths=list_maps, session=ses, task_type=task,
-                    contrast_type=contrast, group_outdir=scratch_out,
-                    model_lab=model, mask=brainmask,rt_array=rt_vals)
+elif model == 'mod-Cue-None':
+    # subset list to remove probe models
+    contrast_list = [contrast for contrast in contrasts if contrast not in ['probe-base', 'rt-base']]
+    rt_vals=None
+    for contrast in contrast_list:
+        # find all contrast fixed effect maps for model permutation across subjects
+        list_maps = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*'
+                                f'contrast-{contrast}_{model}_stat-effect.nii.gz'))
+        group_onesample(fixedeffect_paths=list_maps, session=ses, task_type=task,
+                        contrast_type=contrast, group_outdir=scratch_out,
+                        model_lab=model, mask=brainmask, rt_array=rt_vals)
+
+else:
+    print("Model is incorrect:", model, "Should be mod-Cue-rt or mod-Cue-None")
