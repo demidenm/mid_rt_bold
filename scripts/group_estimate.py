@@ -32,7 +32,7 @@ def group_onesample(fixedeffect_paths: list, session: str, task_type: str,
 
     N_maps = len(fixedeffect_paths)
 
-    if model is 'mod-Cue-rt':
+    if model == 'mod-Cue-rt':
         # Create design matrix with intercept (1s) that's length of subjects/length of fixed_files
         design_matrix = pd.DataFrame([1] * N_maps, columns=['int'])
         design_matrix['rt'] = rt_array
@@ -52,7 +52,7 @@ def group_onesample(fixedeffect_paths: list, session: str, task_type: str,
                         f'contrast-{contrast_type}_{model_lab}_stat-tstat_{con}.nii.gz'
             tstat_map.to_filename(tstat_out)
             
-    elif model is 'mod-Cue-None':
+    elif model == 'mod-Cue-None':
         # Create design matrix with intercept (1s) that's length of subjects/length of fixed_files
         design_matrix = pd.DataFrame([1] * N_maps, columns=['int'])
         sec_lvl_model = SecondLevelModel(mask_img=mask, smoothing_fwhm=None, minimize_memory=False)
@@ -122,7 +122,7 @@ for contrast in contrasts:
     elif model == 'mod-Cue-None':
         rt_vals=None
     else:
-        print("Model is incorrect:", model, "Should be mod-Cue-rt or mod-Cue-non")
+        print("Model is incorrect:", model, "Should be mod-Cue-rt or mod-Cue-None")
 
     group_onesample(fixedeffect_paths=list_maps, session=ses, task_type=task,
                     contrast_type=contrast, group_outdir=scratch_out,
