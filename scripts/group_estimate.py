@@ -70,13 +70,6 @@ def group_onesample(fixedeffect_paths: list, session: str, task_type: str,
         print("Model is incorrect:", model, "Should be mod-Cue-rt or mod-Cue-non")
 
 
-    # calculate residuals for group map
-    residuals_grp = sec_lvl_model.residuals
-    residual_out = f'{group_outdir}/subs-{N_maps}_ses-{session}_task-{task_type}_' \
-                   f'contrast-{contrast_type}_{model_lab}_stat-residuals.nii.gz'
-    residuals_grp.to_filename(residual_out)
-
-
 parser = argparse.ArgumentParser(description="Script to run first level task models w/ nilearn")
 parser.add_argument("--sample", help="sample type, ahrb, abcd or mls?")
 parser.add_argument("--task", help="task type -- e.g., mid, reward, etc")
