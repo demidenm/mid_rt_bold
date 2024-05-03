@@ -9,7 +9,7 @@ warnings.filterwarnings("ignore")
 
 def group_onesample(fixedeffect_paths: list, session: str, task_type: str,
                     contrast_type: str, group_outdir: str,
-                    model_lab: str, mask: str = None):
+                    model_lab: str, rt_array = None, mask: str = None):
     """
     This function takes in a list of fixed effect files for a select contrast and
     calculates a group (secondlevel) model by fitting an intercept to length of maps.
@@ -21,6 +21,7 @@ def group_onesample(fixedeffect_paths: list, session: str, task_type: str,
     :param contrast_type: contrast type saved from fixed effect models
     :param model_lab: complete string of model label, e.g., 'mod-Cue-rt' or 'mod-Cue-None'
     :param group_outdir: path to folder to save the group level models
+    :param rt_df: dataframe with subject RT files to use in group regressor
     :param mask: path to mask, default none
     :return: nothing return, files are saved
     """
@@ -31,24 +32,43 @@ def group_onesample(fixedeffect_paths: list, session: str, task_type: str,
 
     N_maps = len(fixedeffect_paths)
 
-    # Create design matrix with intercept (1s) that's length of subjects/length of fixed_files
-    design_matrix = pd.DataFrame([1] * N_maps,
-                                 columns=['Intercept'])
+    if model is 'mod-Cue-rt':
+        # Create design matrix with intercept (1s) that's length of subjects/length of fixed_files
+        design_matrix = pd.DataFrame([1] * N_maps, columns=['int'])
+        design_matrix['rt'] = rt_array
 
-    # Fit secondlevel model
-    sec_lvl_model = SecondLevelModel(mask_img=mask, smoothing_fwhm=None, minimize_memory=False)
-    sec_lvl_model = sec_lvl_model.fit(second_level_input=fixedeffect_paths,
-                                      design_matrix=design_matrix)
+        # Fit secondlevel model
+        sec_lvl_model = SecondLevelModel(mask_img=mask, smoothing_fwhm=None, minimize_memory=False)
+        sec_lvl_model = sec_lvl_model.fit(second_level_input=fixedeffect_paths,
+                                          design_matrix=design_matrix)
+        # contrasts rt models
+        for con in ['int','rt']:
+            tstat_map = sec_lvl_model.compute_contrast(
+                second_level_contrast=con,
+                second_level_stat_type='t',
+                output_type='stat'
+            )
+            tstat_out = f'{group_outdir}/subs-{N_maps}_ses-{session}_task-{task_type}_' \
+                        f'contrast-{contrast_type}_{model_lab}_stat-tstat_{con}.nii.gz'
+            tstat_map.to_filename(tstat_out)
+            
+    elif model is 'mod-Cue-None':
+        # Create design matrix with intercept (1s) that's length of subjects/length of fixed_files
+        design_matrix = pd.DataFrame([1] * N_maps, columns=['int'])
+        sec_lvl_model = SecondLevelModel(mask_img=mask, smoothing_fwhm=None, minimize_memory=False)
+        sec_lvl_model = sec_lvl_model.fit(second_level_input=fixedeffect_paths,
+                                          design_matrix=design_matrix)
+        tstat_map = sec_lvl_model.compute_contrast(
+            second_level_contrast='int',
+            second_level_stat_type='t',
+            output_type='stat'
+            )
+        tstat_out = f'{group_outdir}/subs-{N_maps}_ses-{session}_task-{task_type}_' \
+                    f'contrast-{contrast_type}_{model_lab}_stat-tstat_int.nii.gz'
+        tstat_map.to_filename(tstat_out)
+    else:
+        print("Model is incorrect:", model, "Should be mod-Cue-rt or mod-Cue-non")
 
-    # Calculate t-statistic from second lvl map, then convert to cohen's d
-    tstat_map = sec_lvl_model.compute_contrast(
-        second_level_contrast='Intercept',
-        second_level_stat_type='t',
-        output_type='stat'
-    )
-    tstat_out = f'{group_outdir}/subs-{N_maps}_ses-{session}_task-{task_type}_' \
-                f'contrast-{contrast_type}_{model_lab}_stat-tstat.nii.gz'
-    tstat_map.to_filename(tstat_out)
 
     # calculate residuals for group map
     residuals_grp = sec_lvl_model.residuals
@@ -61,6 +81,7 @@ parser = argparse.ArgumentParser(description="Script to run first level task mod
 parser.add_argument("--sample", help="sample type, ahrb, abcd or mls?")
 parser.add_argument("--task", help="task type -- e.g., mid, reward, etc")
 parser.add_argument("--run", help="Run lvl -- e.g., 1 or 2 (for 01 / 02)")
+parser.add_argument("--rt_file", help="File to subject level rt data(for 01 / 02)", default=None)
 parser.add_argument("--ses", help="session, include the session type without prefix 'ses', e.g., 1, 01, baselinearm1")
 parser.add_argument("--model", help="model label,"
                                     " e.g. 'mod-Cue-rt' or 'mod-Cue-None'")
@@ -75,6 +96,7 @@ args = parser.parse_args()
 sample = args.sample
 task = args.task
 run = args.run
+rt_file = args.rt_file
 ses = args.ses
 brainmask = args.mask
 model = args.model
@@ -92,10 +114,23 @@ contrasts = [
     'probe-base', 'rt-base'
 ]
 
+sub_rt_df = pd.read_csv(rt_file, sep=',', index_col=True)
+
 for contrast in contrasts:
     # find all contrast fixed effect maps for model permutation across subjects
     list_maps = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*'
                             f'contrast-{contrast}_{model}_stat-effect.nii.gz'))
+    if model == 'mod-Cue-rt':
+        sub_ids = [os.path.basename(path).split('_')[0] for path in list_maps]
+        subset_df = sub_rt_df[sub_rt_df['Subject'].isin(sub_ids)].copy()
+        mean_rt = subset_df['Average_RT'].mean()
+        subset_df['Mean_Centered_RT'] = (subset_df['Average_RT'] - mean_rt).values
+        rt_vals = subset_df['Mean_Centered_RT'].values
+    elif model is 'mod-Cue-None':
+        rt_vals=None
+    else:
+        print("Model is incorrect:", model, "Should be mod-Cue-rt or mod-Cue-non")
+
     group_onesample(fixedeffect_paths=list_maps, session=ses, task_type=task,
                     contrast_type=contrast, group_outdir=scratch_out,
-                    model_lab=model, mask=brainmask)
+                    model_lab=model, mask=brainmask,rt_array=rt_vals)
