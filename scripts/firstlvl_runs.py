@@ -59,9 +59,9 @@ contrasts = [
 contrast_labs = {
     # Anticipation
     'LRew-Neut': 'LgReward - Triangle',
-    'ARew-Neut': 'LgReward + SmallReward - Triangle',
+    'ARew-Neut': 'LgReward + SmallReward - 2*Triangle',
     'LPun-Neut': 'LgPun - Triangle',
-    'APun-Neut': 'LgPun + SmallPun - Triangle',
+    'APun-Neut': 'LgPun + SmallPun - 2*Triangle',
 
     # Feedback
     'ARewHit-ARewMiss': 'LgReward_hit + SmallReward_hit - LgReward_miss - SmallReward_miss',
