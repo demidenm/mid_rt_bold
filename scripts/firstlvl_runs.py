@@ -62,18 +62,15 @@ contrast_labs = {
     'ARew-Neut': 'LgReward + SmallReward - 2*Triangle',
     'LPun-Neut': 'LgPun - Triangle',
     'APun-Neut': 'LgPun + SmallPun - 2*Triangle',
-
     # Feedback
     'ARewHit-ARewMiss': 'LgReward_hit + SmallReward_hit - LgReward_miss - SmallReward_miss',
     'LRewHit-LRewMiss': 'LgReward_hit - LgReward_miss',
     'APunHit-APunMiss': 'LgPun_hit + SmallPun_hit - LgPun_miss - SmallPun_miss',
     'LPunHit-LPunMiss': 'LgPun_hit - LgPun_miss',
     'LRewHit-LNeutHit': 'LgReward_hit - Triangle_hit',
-
     #probe
     'probe-base': 'probe',
     'rt-base': 'probe_rt'
-
 }
 
 fwhm = 5
@@ -113,7 +110,14 @@ for run in runs:
         # Run GLM model using set paths and calculate design matrix
         run_fmri_glm = fmri_glm.fit(nii_path, design_matrices=design_matrix)
         print('\t\t 3/3: From GLM model, create/save contrast beta/variance maps to output path')
-        for con_name, con in contrast_labs.items():
+        if model is None:
+            contrast_list = {key: value for key, value in contrast_labs.items() if key not in ['probe-base', 'rt-base']}
+        elif model == 'rt':
+            contrast_list = contrast_labs
+        else:
+            print("Model should be RT or None")
+
+        for con_name, con in contrast_list.items():
             # calc beta
             beta_name = f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_contrast-{con_name}_mod-Cue-{model}_stat-beta.nii.gz'
             beta_est = run_fmri_glm.compute_contrast(con, output_type='effect_size')
@@ -126,6 +130,13 @@ for run in runs:
 print("Running Fixed effect model -- precision weight of runs for each contrast")
 
 for model in [None, 'rt']:
+    if model is None:
+        contrast = [contrast for contrast in contrasts if contrast not in ['probe-base', 'rt-base']]
+    elif model == 'rt':
+        contrast = contrasts
+    else:
+        print("Model should be RT or None")
+        
     fixed_effect(subject=subj, session=ses, task_type=task,
-                 contrast_list=contrasts, firstlvl_indir=scratch_out, fixedeffect_outdir=scratch_out,
+                 contrast_list=contrast, firstlvl_indir=scratch_out, fixedeffect_outdir=scratch_out,
                  model_lab=model, save_beta=True, save_var=True, save_tstat=False)
