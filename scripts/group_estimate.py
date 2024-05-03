@@ -114,7 +114,7 @@ contrasts = [
     'probe-base', 'rt-base'
 ]
 
-sub_rt_df = pd.read_csv(rt_file, sep=',', index_col=True)
+sub_rt_df = pd.read_csv(rt_file, sep=',')
 
 for contrast in contrasts:
     # find all contrast fixed effect maps for model permutation across subjects
