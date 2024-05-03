@@ -126,7 +126,7 @@ for contrast in contrasts:
         mean_rt = subset_df['Average_RT'].mean()
         subset_df['Mean_Centered_RT'] = (subset_df['Average_RT'] - mean_rt).values
         rt_vals = subset_df['Mean_Centered_RT'].values
-    elif model is 'mod-Cue-None':
+    elif model == 'mod-Cue-None':
         rt_vals=None
     else:
         print("Model is incorrect:", model, "Should be mod-Cue-rt or mod-Cue-non")
