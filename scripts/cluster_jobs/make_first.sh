@@ -1,7 +1,7 @@
 #!/bin/bash
 
 subj_ids=$1
-ses=baselineYear1Arm1 #2YearFollowUpYArm1 #baselineYear1Arm1
+ses=2YearFollowUpYArm1 #2YearFollowUpYArm1 #baselineYear1Arm1
 out_dir=/scratch.global/${USER}/mid_rt_mod
 count_start=0
 

@@ -3,7 +3,7 @@
 curr_dir=`pwd`
 sample=abcd # abcd, ahrb or mls
 task=MID
-ses=baselineYear1Arm1
+ses=2YearFollowUpYArm1
 type=session # run or session
 run=1 # 1 or 2, not used here
 subj_list=${1}

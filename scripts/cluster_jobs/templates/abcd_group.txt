@@ -8,6 +8,7 @@ ses=SESSION
 type=TYPE
 model=MODEL
 sub_list=SUBJ_IDS
+rt_file=/scratch.global/mdemiden/mid_rt_mod/subs_avg-overall-rts.csv
 mask=${curr_dir}/../brain_mask/MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz
 fixed_in=INPUT
 group_dir=OUTPUT
@@ -45,6 +46,7 @@ python ${script_dir}/group_estimate.py \
 		--task ${task} \
 		--run ${run} \
 		--ses ${ses} \
+		--rt_file ${rt_file} \
 		--mask ${mask} \
 		--model ${model} \
 		--input ${tmp_dir}/inp \
