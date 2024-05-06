@@ -67,7 +67,7 @@ contrast_labs = {
     'LRewHit-LRewMiss': 'LgReward_hit - LgReward_miss',
     'APunHit-APunMiss': 'LgPun_hit + SmallPun_hit - LgPun_miss - SmallPun_miss',
     'LPunHit-LPunMiss': 'LgPun_hit - LgPun_miss',
-    'LRewHit-LNeutHit': 'LgReward_hit - Triangle_hit',
+    'LRewHit-NeutHit': 'LgReward_hit - Triangle_hit',
     #probe
     'probe-base': 'probe',
     'rt-base': 'probe_rt'
