@@ -104,8 +104,9 @@ for model in ['mod-Cue-rt', 'mod-Cue-rt']:
         # subset id's RT times to match
         sub_ids = [os.path.basename(path).split('_')[0] for path in list_maps]
         subset_df = sub_rt_df[sub_rt_df['Subject'].isin(sub_ids)].copy()
-        assert (subset_df['Subject'] ==
-                sub_ids).all(), "Order of IDs in subset_df != sub_ids."
+        subset_df = subset_df.set_index('Subject').loc[sub_ids].reset_index() # ensure index sorts same as IDs
+        assert (subset_df['Subject'].values ==
+                np.array(sub_ids)).all(), "Order of IDs in subset_df != sub_ids."
 
         mean_rt = subset_df['Average_RT'].mean()
         subset_df['Mean_Centered_RT'] = (subset_df['Average_RT'] - mean_rt).values
