@@ -59,6 +59,8 @@ parser.add_argument("--task", help="task type -- e.g., mid, reward, etc")
 parser.add_argument("--run", help="Run lvl -- e.g., 1 or 2 (for 01 / 02)")
 parser.add_argument("--rt_file", help="File to subject level rt data(for 01 / 02)", default=None)
 parser.add_argument("--ses", help="session, include the session type without prefix 'ses', e.g., 1, 01, baselinearm1")
+parser.add_argument("--model", help="model label,"
+                                    " e.g. 'mod-Cue-rt' or 'mod-Cue-None'")
 parser.add_argument("--mask", help="path the to the binarized brain mask (e.g., MNI152 or "
                                    "constrained mask in MNI space, or None")
 parser.add_argument("--input", help="input path to data")
@@ -72,6 +74,7 @@ task = args.task
 run = args.run
 rt_file = args.rt_file
 ses = args.ses
+model = args.model
 brainmask = args.mask
 in_dir = args.input
 scratch_out = args.output
@@ -89,30 +92,30 @@ contrasts = [
 
 sub_rt_df = pd.read_csv(rt_file, sep=',')
 
-for model in ['mod-Cue-rt', 'mod-Cue-rt']:
-    if model == 'mod-Cue-rt':
-        contrast_list = contrasts
-    elif model == 'mod-Cue-None':
-        # subset list to remove probe models
-        contrast_list = [contrast for contrast in contrasts if contrast not in ['probe-base', 'rt-base']]
-    else:
-        print("Model is incorrect:", model, "Should be mod-Cue-rt or mod-Cue-None")
 
-    for contrast in contrast_list:
-        # find all contrast fixed effect maps for model permutation across subjects
-        list_maps = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*'
-                                f'contrast-{contrast}_{model}_stat-effect.nii.gz'))
-        # subset id's RT times to match
-        sub_ids = [os.path.basename(path).split('_')[0] for path in list_maps]
-        subset_df = sub_rt_df[sub_rt_df['Subject'].isin(sub_ids)].copy()
-        subset_df = subset_df.set_index('Subject').loc[sub_ids].reset_index() # ensure index sorts same as IDs
-        assert (subset_df['Subject'].values ==
-                np.array(sub_ids)).all(), "Order of IDs in subset_df != sub_ids."
+if model == 'mod-Cue-rt':
+    contrast_list = contrasts
+elif model == 'mod-Cue-None':
+    # subset list to remove probe models
+    contrast_list = [contrast for contrast in contrasts if contrast not in ['probe-base', 'rt-base']]
+else:
+    print("Model is incorrect:", model, "Should be mod-Cue-rt or mod-Cue-None")
 
-        mean_rt = subset_df['Average_RT'].mean()
-        subset_df['Mean_Centered_RT'] = (subset_df['Average_RT'] - mean_rt).values
-        rt_vals = subset_df['Mean_Centered_RT'].values
+for contrast in contrast_list:
+    # find all contrast fixed effect maps for model permutation across subjects
+    list_maps = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*'
+                            f'contrast-{contrast}_{model}_stat-effect.nii.gz'))
+    # subset id's RT times to match
+    sub_ids = [os.path.basename(path).split('_')[0] for path in list_maps]
+    subset_df = sub_rt_df[sub_rt_df['Subject'].isin(sub_ids)].copy()
+    subset_df = subset_df.set_index('Subject').loc[sub_ids].reset_index() # ensure index sorts same as IDs
+    assert (subset_df['Subject'].values ==
+            np.array(sub_ids)).all(), "Order of IDs in subset_df != sub_ids."
 
-        group_onesample(fixedeffect_paths=list_maps, session=ses, task_type=task,
-                        contrast_type=contrast, group_outdir=scratch_out,
-                        model_lab=model, mask=brainmask, rt_array=rt_vals)
+    mean_rt = subset_df['Average_RT'].mean()
+    subset_df['Mean_Centered_RT'] = (subset_df['Average_RT'] - mean_rt).values
+    rt_vals = subset_df['Mean_Centered_RT'].values
+
+    group_onesample(fixedeffect_paths=list_maps, session=ses, task_type=task,
+                    contrast_type=contrast, group_outdir=scratch_out,
+                    model_lab=model, mask=brainmask, rt_array=rt_vals)
