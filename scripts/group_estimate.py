@@ -1,6 +1,7 @@
 import os
 import warnings
 import argparse
+import numpy as np
 import pandas as pd
 from glob import glob
 from nilearn.glm.second_level import SecondLevelModel
