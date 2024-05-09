@@ -4,6 +4,7 @@ import subprocess
 import argparse
 import numpy as np
 import pandas as pd
+import sys
 from glob import glob
 from nilearn.glm.second_level import SecondLevelModel
 warnings.filterwarnings("ignore")
