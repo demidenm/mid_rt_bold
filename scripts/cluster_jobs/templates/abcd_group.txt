@@ -7,6 +7,7 @@ run=RUN
 ses=SESSION
 type=TYPE
 model=MODEL
+contrast=CONTRAST
 sub_list=SUBJ_IDS
 rt_file=/scratch.global/mdemiden/mid_rt_mod/subs_avg-overall-rts.csv
 mask=${curr_dir}/../brain_mask/MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz
@@ -48,6 +49,7 @@ python ${script_dir}/group_estimate.py \
 		--ses ${ses} \
 		--rt_file ${rt_file} \
 		--mask ${mask} \
+		--contrast ${contrast} \
 		--model ${model} \
 		--input ${tmp_dir}/inp \
 		--output ${group_scratch}
