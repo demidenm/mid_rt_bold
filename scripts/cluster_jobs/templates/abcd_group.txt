@@ -62,4 +62,4 @@ else
 fi
 
 echo "Syncing files from scratch to analysis path. Deleted from scratch once sync'd" 
-rsync -av --remove-source-files ${group_scratch}/ ${group_out}/
+rsync -av --exclude='concat_imgs/' --remove-source-files ${group_scratch}/ ${group_out}/

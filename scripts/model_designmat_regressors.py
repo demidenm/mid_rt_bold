@@ -204,3 +204,128 @@ def fixed_effect(subject: str, session: str, task_type: str,
             fix_tstat_out = f'{fixedeffect_outdir}/{subject}_ses-{session}_task-{task_type}_' \
                             f'contrast-{contrast}_mod-Cue-{model_lab}_stat-tstat.nii.gz'
             fix_tstat.to_filename(fix_tstat_out)
+
+
+# Jeanette Mumfords code to incorporate randomise into grp and rt models (not, separating due to randomise issues)
+def make_4d_data_mask(bold_paths,sess,contrast_lab, model_type, tmp_dir):
+    from nilearn.maskers import NiftiMasker
+
+    if not os.path.exists(f'{tmp_dir}'):
+        os.makedirs(f'{tmp_dir}')
+
+    n_maps=len(bold_paths)
+    data4d = nib.funcs.concat_images(bold_paths)
+    masked_4d = NiftiMasker().fit(data4d).mask_img_
+    filename_root = (f'{tmp_dir}/subs-{n_maps}_ses-{sess}_task-MID_contrast-{contrast_lab}_{model_type}')
+    data4d.to_filename(f'{filename_root}.nii.gz')
+    masked_4d.to_filename(f'{filename_root}_mask.nii.gz')
+
+def make_randomise_files(desmat_final, regressor_names, contrasts, outdir):
+    '''
+    desmat_final: numpy array of the design matrix
+    regressor_names: The regressor names that correspond to the columns of desmat_final
+      note, the contrasts are defined using these names.  e.g. ['intercept', 'rt_centered']
+    contrasts: expression_to_contrast is used, so these are entered as a list of
+      string-based contrast definitions that use regressor_names: [['intercept'], ['rt_centered']]
+    outdir: where you're saving all of the files
+    '''
+    import numpy as np
+    from nilearn.glm.contrasts import expression_to_contrast_vector
+
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
+    num_input_contrasts = desmat_final.shape[0]
+    num_regressors = desmat_final.shape[1]
+    # make the desmat.mat file (fsl header with design matrix below)
+    # First just make the file header and then append the desmat data
+    desmat_path = f'{outdir}/desmat.mat'
+    with open(desmat_path, 'w') as f:
+        f.write(f'/NumWaves	{num_regressors} \n/NumPoints {num_input_contrasts} '
+                '\n/PPheights 1.000000e+00 \n \n/Matrix \n')
+        np.savetxt(f, desmat_final, delimiter='\t')
+    # .grp file (required for f-tests)
+    grp_path = f'{outdir}/desmat.grp'
+    with open(grp_path, 'w') as f:
+        f.write(f'/NumWaves  1 \n/NumPoints {num_input_contrasts}\n \n/Matrix \n')
+        np.savetxt(f, np.ones(num_input_contrasts), fmt='%s', delimiter='\t')
+        # save out contrasts in .con file
+    contrast_matrix = []
+    num_contrasts = len(contrasts)
+    for contrast in contrasts:
+        contrast_def = expression_to_contrast_vector(
+            contrast[0], regressor_names)
+        contrast_matrix.append(np.array(contrast_def))
+    con_path = f'{outdir}/desmat.con'
+    ppheight_and_reqeff = '\t '.join(str(val) for val in [1] * num_contrasts)
+    with open(con_path, 'w') as f:
+        for val, contrast in enumerate(contrasts):
+            f.write(f'/ContrastName{val + 1} {contrast[0]}\n')
+        f.write(f'/NumWaves  {num_regressors} \n/NumContrasts {num_contrasts}'
+                f'\n/PPheights {ppheight_and_reqeff} '
+                f'\n/RequiredEffect {ppheight_and_reqeff} \n \n/Matrix \n')
+        np.savetxt(f, contrast_matrix, delimiter='\t')
+        # fts file (used for f-test)
+    fts_path = f'{outdir}/desmat.fts'
+    with open(fts_path, 'w') as f:
+        f.write(f'/NumWaves  {num_contrasts} \n/NumContrasts {num_contrasts}\n \n/Matrix \n')
+        np.savetxt(f, np.identity(num_contrasts), fmt='%s', delimiter='\t')
+
+
+def make_randomise_rt(comb_nii_path, outdir, permutations=1000):
+    '''
+    This hasn't been tested at all, since I launched this differently on Sherlock
+    filename_input_root:  this is the filename used to make the mask and data file.  They should
+    have the same names, but the mask file ends in _mask.  See the code below to clarify and edit accordingly.
+    outdir: same output directoroy where the files from make_randomise_files were saved to
+
+    '''
+    from pathlib import Path
+    import stat
+
+    inp_dir, file_name = os.path.split(comb_nii_path)
+    file_noext, _ = os.path.splitext(file_name)
+    if not os.path.exists(f'{outdir}'):
+        os.makedirs(f'{outdir}')
+
+    randomise_call = (f'randomise -i {inp_dir}/{file_name}'
+                      f' -o {outdir}/{file_noext}_randomise'
+                      f' -m {inp_dir}/{file_noext}_mask.nii.gz'
+                      f' -d {outdir}/desmat.mat -t {outdir}/desmat.con'
+                      f' -f {outdir}/desmat.fts  -T -n {permutations}')
+
+    randomise_call_file = Path(f'{outdir}/randomise_call.sh')
+    with open(randomise_call_file, 'w') as f:
+        f.write(randomise_call)
+    # This should change the file permissions to make the script executeable
+    randomise_call_file.chmod(randomise_call_file.stat().st_mode | stat.S_IXGRP | stat.S_IEXEC)
+
+
+def make_randomise_grp(comb_nii_path, outdir, permutations=1000):
+    '''
+    This hasn't been tested at all, since I launched this differently on Sherlock
+    filename_input_root:  this is the filename used to make the mask and data file.  They should
+    have the same names, but the mask file ends in _mask.  See the code below to clarify and edit accordingly.
+    outdir: same output directoroy where the files from make_randomise_files were saved to
+
+    '''
+    from pathlib import Path
+    import stat
+
+    if not os.path.exists(f'{outdir}'):
+        os.makedirs(f'{outdir}')
+
+    inp_dir, file_name = os.path.split(comb_nii_path)
+    file_noext, _ = os.path.splitext(file_name)
+
+    randomise_call = (f'randomise -i {inp_dir}/{file_name}'
+                      f' -o {outdir}/{file_noext}_randomise'
+                      f' -m {inp_dir}/{file_noext}_mask.nii.gz'
+                      f' -1 -t {outdir}/desmat.con'
+                      f' -f {outdir}/desmat.fts  -T -n {permutations}')
+
+    randomise_call_file = Path(f'{outdir}/randomise_call.sh')
+    with open(randomise_call_file, 'w') as f:
+        f.write(randomise_call)
+    # This should change the file permissions to make the script executeable
+    randomise_call_file.chmod(randomise_call_file.stat().st_mode | stat.S_IXGRP | stat.S_IEXEC)
