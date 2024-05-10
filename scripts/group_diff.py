@@ -66,7 +66,7 @@ rt_nii = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast
 # estimate differences for randomise
 diff_nifti = math_img('img1 - img2', img1=nonrt_nii, img2=rt_nii)
 diff_nifti_path = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_diff-cue-rt.nii.gz'
-diff_nifti_path.to_filename(diff_nifti)
+diff_nifti.to_filename(diff_nifti_path)
 
 
 # Create design matrix with intercept (1s) that's length of subjects/length of fixed_files
