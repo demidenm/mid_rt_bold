@@ -41,11 +41,11 @@ scratch_out = args.output
 
 # find all contrast fixed effect maps for model permutation across subjects
 nonrt_list = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*contrast-{contrast}_mod-Cue-rt_stat-effect.nii.gz'))
-rtlist = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*contrast-{contrast}_mod-Cue-None_stat-effect.nii.gz'))
+rt_list = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*contrast-{contrast}_mod-Cue-None_stat-effect.nii.gz'))
 
 # subset id's RT times to match
 nonrt_ids = [os.path.basename(path).split('_')[0] for path in nonrt_list]
-rt_ids = [os.path.basename(path).split('_')[0] for path in rtlist]
+rt_ids = [os.path.basename(path).split('_')[0] for path in rt_list]
 
 assert (np.array(nonrt_ids) == np.array(rt_ids)).all(), "Order of IDs in nort_ids != rt_ids."
 
@@ -53,10 +53,10 @@ assert (np.array(nonrt_ids) == np.array(rt_ids)).all(), "Order of IDs in nort_id
 # randomise, permuted maps + corrected
 tmp_rand = f'{scratch_out}/randomise'
 # make nonrt & rt 4D
-make_4d_data_mask(bold_paths=nonrt_ids, sess=ses, contrast_lab=contrast,
+make_4d_data_mask(bold_paths=nonrt_list, sess=ses, contrast_lab=contrast,
                   model_type='mod-Cue-None', tmp_dir=f'{tmp_rand}/concat_imgs')
 # make rt 4d
-make_4d_data_mask(bold_paths=nonrt_ids, sess=ses, contrast_lab=contrast,
+make_4d_data_mask(bold_paths=rt_list, sess=ses, contrast_lab=contrast,
                   model_type='mod-Cue-rt', tmp_dir=f'{tmp_rand}/concat_imgs')
 
 nonrt_nii = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_mod-Cue-None.nii'
