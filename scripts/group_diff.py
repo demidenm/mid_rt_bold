@@ -59,8 +59,8 @@ make_4d_data_mask(bold_paths=nonrt_list, sess=ses, contrast_lab=contrast,
 make_4d_data_mask(bold_paths=rt_list, sess=ses, contrast_lab=contrast,
                   model_type='mod-Cue-rt', tmp_dir=f'{tmp_rand}/concat_imgs')
 
-nonrt_nii = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_mod-Cue-None.nii'
-rt_nii = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_mod-Cue-rt.nii'
+nonrt_nii = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_mod-Cue-None.nii.gz'
+rt_nii = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_mod-Cue-rt.nii.gz'
 # estimate differences for randomise
 diff_nifti = math_img('img1 - img2', img1=nonrt_nii, img2=rt_nii)
 
