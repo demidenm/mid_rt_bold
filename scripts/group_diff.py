@@ -1,10 +1,12 @@
 import os
 import sys
+import stat
 import warnings
 import subprocess
 import argparse
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from glob import glob
 from nilearn.image import math_img
 warnings.filterwarnings("ignore")
@@ -13,7 +15,7 @@ warnings.filterwarnings("ignore")
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_dir)
 from scripts.model_designmat_regressors import (
-    make_randomise_grp, make_randomise_files, make_4d_data_mask
+    make_randomise_files, make_4d_data_mask
 )
 
 parser = argparse.ArgumentParser(description="Script to run first level task models w/ nilearn")
@@ -63,6 +65,8 @@ nonrt_nii = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contr
 rt_nii = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_mod-Cue-rt.nii.gz'
 # estimate differences for randomise
 diff_nifti = math_img('img1 - img2', img1=nonrt_nii, img2=rt_nii)
+diff_nifti_path = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_diff-cue-rt.nii.gz'
+diff_nifti_path.to_filename(diff_nifti)
 
 
 # Create design matrix with intercept (1s) that's length of subjects/length of fixed_files
@@ -70,9 +74,27 @@ level = 'grp/diff'
 design_matrix = pd.DataFrame({'int': [1] * len(nonrt_list)})
 make_randomise_files(desmat_final=design_matrix, regressor_names='int',
                      contrasts=['int'], outdir=f'{tmp_rand}/randomise/{contrast}/{level}')
-make_randomise_grp(comb_nii_path=diff_nifti, outdir=f'{tmp_rand}/randomise/{contrast}/{level}')
+
+# make group randomise run
+outdir = f'{tmp_rand}/randomise/{contrast}/{level}'
+
+if not os.path.exists(f'{outdir}'):
+    os.makedirs(f'{outdir}')
+
+randomise_call = (f'randomise -i {diff_nifti_path}'
+                  f' -o {outdir}/subs-500_ses-{ses}_task-MID_contrast-{contrast}_diff-cue-rt_randomise'
+                  f' -m {tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_mod-Cue-None_mask.nii.gz'
+                  f' -1 -t {outdir}/desmat.con'
+                  f' -f {outdir}/desmat.fts  -T -n 1000')
+randomise_call_file = Path(f'{outdir}/randomise_call.sh')
+
+with open(randomise_call_file, 'w') as f:
+    f.write(randomise_call)
+# This should change the file permissions to make the script executeable
+randomise_call_file.chmod(randomise_call_file.stat().st_mode | stat.S_IXGRP | stat.S_IEXEC)
+
 
 print("*** Running: *** /grp/diff", contrast)
-script_path = f'{tmp_rand}/randomise/{contrast}/{level}/randomise_call.sh'
+script_path = f'{outdir}/randomise_call.sh'
 subprocess.run(['bash', script_path])
 
