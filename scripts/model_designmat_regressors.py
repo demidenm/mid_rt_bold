@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
-from nibabel import nib
+import nibabel as nib
 from nilearn.glm.first_level import make_first_level_design_matrix
 from nilearn.glm import compute_fixed_effects
 from glob import glob
