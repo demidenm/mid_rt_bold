@@ -42,8 +42,8 @@ in_dir = args.input
 scratch_out = args.output
 
 # find all contrast fixed effect maps for model permutation across subjects
-nonrt_list = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*contrast-{contrast}_mod-Cue-rt_stat-effect.nii.gz'))
-rt_list = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*contrast-{contrast}_mod-Cue-None_stat-effect.nii.gz'))
+nonrt_list = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*contrast-{contrast}_mod-Cue-None_stat-effect.nii.gz'))
+rt_list = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*contrast-{contrast}_mod-Cue-rt_stat-effect.nii.gz'))
 
 # subset id's RT times to match
 nonrt_ids = [os.path.basename(path).split('_')[0] for path in nonrt_list]
