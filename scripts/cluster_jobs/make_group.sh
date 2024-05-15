@@ -1,15 +1,15 @@
 #!/bin/bash
 
 curr_dir=`pwd`
-sample=abcd # abcd, ahrb or mls
+sample=abcd 
 task=MID
 ses=2YearFollowUpYArm1
 type=session # run or session
-run=1 # 1 or 2, not used here
+run=1
 subj_list=${1}
 inpfold=/scratch.global/${USER}/mid_rt_mod/firstlvl
 outfold=/scratch.global/${USER}/mid_rt_mod/group
-counter_start=0
+counter_start=9
 rt_mods=('mod-Cue-rt' 'mod-Cue-None')
 cuemod_contrasts=('LRew-Neut' 'ARew-Neut' 'LPun-Neut' 'APun-Neut' 'ARewHit-ARewMiss' 'LRewHit-LRewMiss' 'APunHit-APunMiss' 'LPunHit-LPunMiss' 'LRewHit-NeutHit')
 rtmod_contrasts=('LRew-Neut' 'ARew-Neut' 'LPun-Neut' 'APun-Neut' 'ARewHit-ARewMiss' 'LRewHit-LRewMiss' 'APunHit-APunMiss' 'LPunHit-LPunMiss' 'LRewHit-NeutHit' 'probe-base' 'rt-base')
@@ -35,7 +35,7 @@ for model in ${rt_mods[@]} ; do
         s|OUTPUT|${outfold}|g; \
         s|SUBJ_IDS|${subj_list}|g; \
         s|SAMPLE|${sample}|g;" ./templates/abcd_group.txt > ./batch_jobs/group${n}
-            n=$((n+1))
+        n=$((n+1))
     done
   elif [ "$model" == 'mod-Cue-None' ]; then
     for con in ${cuemod_contrasts[@]} ; do
@@ -49,7 +49,7 @@ for model in ${rt_mods[@]} ; do
         s|OUTPUT|${outfold}|g; \
         s|SUBJ_IDS|${subj_list}|g; \
         s|SAMPLE|${sample}|g;" ./templates/abcd_group.txt > ./batch_jobs/group${n}
-            n=$((n+1))
+        n=$((n+1))
     done
   fi
 
