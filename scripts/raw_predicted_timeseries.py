@@ -389,13 +389,14 @@ if __name__ == "__main__":
 
     # options
     onset_col = 'Probe.OnsetTime'
+    colname = onset_col.replace('.', '').replace(' ', '')
     condition_col = 'Feedback.Response'
     condition_vals = ['LgReward_hit', 'LgPun_hit', 'Triangle_hit']
     scanner = 'siemens'
     scan_tr = .8
     volumes = 403
     trdelay = 20
-    
+
     roi_label = 'motor'
     roi_coordinates = (-38, -22, 56)  # left motor from neurosynth
     fwhm = 4  # from 2021 knutson paper
@@ -404,10 +405,8 @@ if __name__ == "__main__":
 
 
     # select paths
-    bold_list = glob(f'{inp_deriv}/**/ses-{ses}/func/'
-                     f'*_run-{run}_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz')
-    beh_list = glob(f'{inp_beh}/**/ses-{ses}/func/*_run-{run}_events.tsv')
-
+    bold_list = glob(f'{inp_deriv}/**/ses-{ses}/func/*_run-{run}_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz')[0:100]
+    beh_list = glob(f'{inp_beh}/**/ses-{ses}/func/*_run-{run}_events.tsv')[0:100]
     # check that file length and ids are same order
     bold_ids = [os.path.basename(path).split('_')[0] for path in bold_list]
     beh_ids = [os.path.basename(path).split('_')[0] for path in beh_list]
@@ -421,6 +420,13 @@ if __name__ == "__main__":
     timeseries, mask_coord = extract_time_series(bold_paths=bold_list, roi_type='coords', roi_coords=roi_coordinates,
                                                  radius_mm=roi_radius, fwhm_smooth=fwhm,
                                                  high_pass_sec=filter_freq, detrend=True)
+
+    raw_timeseries = extract_postcue_trs_for_conditions(events_data=beh_list, onset=onset_col, trial_name=condition_col,
+                                                        bold_tr=scan_tr, bold_vols=volumes, conditions=condition_vals,
+                                                        tr_delay=trdelay, time_series=timeseries)
+    raw_timeseries.to_csv(
+        f'{out_fold}/subs-{n_subs}_run-{run}_timeseries-{roi_label}_scanner-{scanner}_{colname}_'
+        f'raw_timeseries.csv', sep=',')
 
     # JM adding things, but you'll have to make this work
     #  Estimate the GLM for each time series
@@ -439,16 +445,10 @@ if __name__ == "__main__":
 
     glm_timeserise = np.array(glm_predicted_timeseries)[:, :, None]
 
-    raw_timeseries = extract_postcue_trs_for_conditions(events_data=beh_list, onset=onset_col, trial_name=condition_col,
-                                                        bold_tr=scan_tr, bold_vols=volumes, conditions=condition_vals,
-                                                        tr_delay=trdelay, time_series=timeseries)
 
     predicted_timeseries = extract_postcue_trs_for_conditions(events_data=beh_list, onset=onset_col, trial_name=condition_col,
                                                               bold_tr=scan_tr, bold_vols=volumes, conditions=condition_vals,
                                                               tr_delay=trdelay, time_series=glm_timeserise)
-    colname = onset_col.replace('.', '').replace(' ', '')
-    raw_timeseries.to_csv(
-        f'{out_fold}/subs-{n_subs}_run-{run}_timeseries-{roi_label}_scanner-{scanner}_{colname}_'
-        f'raw_timeseries.csv', sep=',')
+
     predicted_timeseries.to_csv(f'{out_fold}/subs-{n_subs}_run-{run}_timeseries-{roi_label}_scanner-{scanner}_{colname}_'
                                 f'predicted_timeseries.csv', sep=',')
