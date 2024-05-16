@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# define variables
+curr_dir=`pwd`
+ses="2YearFollowUpYArm1"
+run="01"
+task=RUN
+inp_deriv="/scratch.global/${USER}/siemens_scanner/subjects"
+inp_beh="/scratch.global/${USER}/siemens_scanner/subjects"
+output="/scratch.global/${USER}/siemens_scanner/files"
+script_dir="${curr_dir}/.."
+python ${script_dir}/raw_predicted_timeseries.py \
+                                                --inp_deriv ${inp_deriv} \
+                                                --inp_beh ${inp_beh} \
+                                                --task ${task} \
+                                                --ses ${ses} \
+                                                --run ${run} \
+                                                --output ${output}
+cuetrplt_error=$?
+if [ ${cuetrplt_error} -eq 0 ]; then
+        echo "Python tr-by-tr plotting completed successfully! Saved in ${output} "
+else
+        echo "Python tr-by-tr plotting failed."
+        exit 1
+fi
