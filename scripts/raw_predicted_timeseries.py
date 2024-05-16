@@ -392,16 +392,16 @@ if __name__ == "__main__":
     condition_col = 'Feedback.Response'
     condition_vals = ['LgReward_hit', 'LgPun_hit', 'Triangle_hit']
     scanner = 'siemens'
-
+    scan_tr = .8
+    volumes = 403
+    trdelay = 20
+    
     roi_label = 'motor'
     roi_coordinates = (-38, -22, 56)  # left motor from neurosynth
     fwhm = 4  # from 2021 knutson paper
-    sphere = 8  # from 2021 knutson paper
-    filter_freq = 90  # 90 sec from 2021 Knutson paper
-    scan_tr = .8
-    volumes = 403
     roi_radius = 8  # from 2021 knutson paper
-    trdelay = 20
+    filter_freq = 90  # 90 sec from 2021 Knutson paper
+
 
     # select paths
     bold_list = glob(f'{inp_deriv}/**/ses-{ses}/func/'
@@ -433,7 +433,7 @@ if __name__ == "__main__":
         events_loop = pd.read_csv(beh_list[sub], sep='\t')
         dat_loop = timeseries[sub]
         des_loop = create_design_mid(events_df=events_loop, bold_tr=scan_tr, num_volumes=volumes,
-                                     conf_regressors=None, rt_model=None, hrf_model='spm', stc=False)
+                                     conf_regressors=None, rt_model='rt', hrf_model='spm', stc=False)
         regression = sm.OLS(dat_loop, des_loop).fit()
         glm_predicted_timeseries.append(regression.fittedvalues)
 
