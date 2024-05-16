@@ -1,7 +1,10 @@
 import os
+import stat
 import pandas as pd
 import numpy as np
 import nibabel as nib
+from pathlib import Path
+from nilearn.glm.contrasts import expression_to_contrast_vector
 from nilearn.glm.first_level import make_first_level_design_matrix
 from nilearn.glm import compute_fixed_effects
 from glob import glob
@@ -92,7 +95,7 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
     events_df[new_feedback_label] = np.where(events_df['prbacc'] == 1.0,
                                              events_df['Condition'] + '_hit',
                                              events_df['Condition'] + '_miss')
-    if rt_model is 'rt':
+    if rt_model == 'rt':
         try:
             # concat  cue onset/duration + feedback onset/duration + probe regressors
             conditions = pd.concat([events_df.loc[:, "Condition"],
@@ -208,30 +211,29 @@ def fixed_effect(subject: str, session: str, task_type: str,
 
 
 # Jeanette Mumfords code to incorporate randomise into grp and rt models (not, separating due to randomise issues)
-def make_4d_data_mask(bold_paths,sess,contrast_lab, model_type, tmp_dir):
+def make_4d_data_mask(bold_paths, sess, contrast_lab, model_type, tmp_dir):
     from nilearn.maskers import NiftiMasker
 
     if not os.path.exists(f'{tmp_dir}'):
         os.makedirs(f'{tmp_dir}')
 
-    n_maps=len(bold_paths)
+    n_maps = len(bold_paths)
     data4d = nib.funcs.concat_images(bold_paths)
     masked_4d = NiftiMasker().fit(data4d).mask_img_
-    filename_root = (f'{tmp_dir}/subs-{n_maps}_ses-{sess}_task-MID_contrast-{contrast_lab}_{model_type}')
+    filename_root = f'{tmp_dir}/subs-{n_maps}_ses-{sess}_task-MID_contrast-{contrast_lab}_{model_type}'
     data4d.to_filename(f'{filename_root}.nii.gz')
     masked_4d.to_filename(f'{filename_root}_mask.nii.gz')
 
+
 def make_randomise_files(desmat_final, regressor_names, contrasts, outdir):
-    '''
+    """
     desmat_final: numpy array of the design matrix
     regressor_names: The regressor names that correspond to the columns of desmat_final
       note, the contrasts are defined using these names.  e.g. ['intercept', 'rt_centered']
     contrasts: expression_to_contrast is used, so these are entered as a list of
       string-based contrast definitions that use regressor_names: [['intercept'], ['rt_centered']]
     outdir: where you're saving all of the files
-    '''
-    import numpy as np
-    from nilearn.glm.contrasts import expression_to_contrast_vector
+    """
 
     if not os.path.exists(outdir):
         os.makedirs(outdir)
@@ -274,15 +276,13 @@ def make_randomise_files(desmat_final, regressor_names, contrasts, outdir):
 
 
 def make_randomise_rt(comb_nii_path, outdir, permutations=1000):
-    '''
+    """
     This hasn't been tested at all, since I launched this differently on Sherlock
     filename_input_root:  this is the filename used to make the mask and data file.  They should
     have the same names, but the mask file ends in _mask.  See the code below to clarify and edit accordingly.
     outdir: same output directoroy where the files from make_randomise_files were saved to
 
-    '''
-    from pathlib import Path
-    import stat
+    """
 
     inp_dir, file_name = os.path.split(comb_nii_path)
     file_noext, _ = os.path.splitext(file_name)
@@ -303,13 +303,13 @@ def make_randomise_rt(comb_nii_path, outdir, permutations=1000):
 
 
 def make_randomise_grp(comb_nii_path, outdir, permutations=1000):
-    '''
+    """
     This hasn't been tested at all, since I launched this differently on Sherlock
     filename_input_root:  this is the filename used to make the mask and data file.  They should
     have the same names, but the mask file ends in _mask.  See the code below to clarify and edit accordingly.
     outdir: same output directoroy where the files from make_randomise_files were saved to
 
-    '''
+    """
     from pathlib import Path
     import stat
 
