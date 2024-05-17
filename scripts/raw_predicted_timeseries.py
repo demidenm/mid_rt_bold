@@ -371,6 +371,8 @@ def parse_args():
     parser.add_argument("--task", help="task type -- e.g., mid, reward, etc")
     parser.add_argument("--ses", help="session, include the session type without prefix, e.g., 1, 01, baselinearm1")
     parser.add_argument("--run", help="run e.g., 01, 02")
+    parser.add_argument("--roi_label", help="motor or nac")
+    parser.add_argument("--roi_mask", help="if label use specific mask, provide path to mask", default=None)
     parser.add_argument("--output", help="output folder where to write out save timeseries df and plot")
 
     return parser.parse_args()
@@ -385,6 +387,8 @@ if __name__ == "__main__":
     task = args.task
     ses = args.ses
     run = args.run
+    roi_label = args.run
+    roi_mask = args.roi_mask
     out_fold = args.output
 
     # options
@@ -396,9 +400,6 @@ if __name__ == "__main__":
     scan_tr = .8
     volumes = 403
     trdelay = 20
-
-    roi_label = 'motor'
-    roi_coordinates = (-38, -22, 56)  # left motor from neurosynth
     fwhm = 4  # from 2021 knutson paper
     roi_radius = 8  # from 2021 knutson paper
     filter_freq = 90  # 90 sec from 2021 Knutson paper
@@ -417,9 +418,14 @@ if __name__ == "__main__":
     n_subs = len(bold_list)
 
     # extract timeseries
-    timeseries, mask_coord = extract_time_series(bold_paths=bold_list, roi_type='coords', roi_coords=roi_coordinates,
-                                                 radius_mm=roi_radius, fwhm_smooth=fwhm,
-                                                 high_pass_sec=filter_freq, detrend=True)
+    if roi_mask is not None:
+        timeseries, mask_coord = extract_time_series(bold_paths=bold_list, roi_type='coords', roi_coords=roi_coordinates,
+                                                     radius_mm=roi_radius, fwhm_smooth=fwhm, high_pass_sec=filter_freq, detrend=True)
+    else:
+        if roi_label == 'motor':
+            roi_coordinates = (-38, -22, 56)  # left motor from neurosynth
+            timeseries, mask_coord = extract_time_series(bold_paths=bold_list, roi_type='mask', roi_mask=roi_mask,
+                                                         fwhm_smooth=fwhm, high_pass_sec=filter_freq, detrend=True)
 
     raw_timeseries = extract_postcue_trs_for_conditions(events_data=beh_list, onset=onset_col, trial_name=condition_col,
                                                         bold_tr=scan_tr, bold_vols=volumes, conditions=condition_vals,

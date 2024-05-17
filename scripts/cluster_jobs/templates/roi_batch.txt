@@ -5,6 +5,8 @@ curr_dir=`pwd`
 ses="2YearFollowUpYArm1"
 run="01"
 task=RUN
+roi_label=ROILABEL
+roi_mask=ROIPATH
 inp_deriv="/scratch.global/${USER}/siemens_scanner/subjects"
 inp_beh="/scratch.global/${USER}/siemens_scanner/subjects"
 output="/scratch.global/${USER}/siemens_scanner/files"
@@ -14,6 +16,8 @@ python ${script_dir}/raw_predicted_timeseries.py \
                                                 --inp_beh ${inp_beh} \
                                                 --task ${task} \
                                                 --ses ${ses} \
+                                                --roi_label ${roi_label} \
+                                                --roi_mask ${roi_mask} \
                                                 --run ${run} \
                                                 --output ${output}
 cuetrplt_error=$?
