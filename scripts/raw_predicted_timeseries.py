@@ -419,13 +419,15 @@ if __name__ == "__main__":
 
     # extract timeseries
     if roi_mask is not None:
-        timeseries, mask_coord = extract_time_series(bold_paths=bold_list, roi_type='coords', roi_coords=roi_coordinates,
-                                                     radius_mm=roi_radius, fwhm_smooth=fwhm, high_pass_sec=filter_freq, detrend=True)
+        timeseries = extract_time_series(bold_paths=bold_list, roi_type='mask', roi_mask=roi_mask,
+                                                     fwhm_smooth=fwhm, high_pass_sec=filter_freq, detrend=True)
     else:
         if roi_label == 'motor':
             roi_coordinates = (-38, -22, 56)  # left motor from neurosynth
-            timeseries, mask_coord = extract_time_series(bold_paths=bold_list, roi_type='mask', roi_mask=roi_mask,
-                                                         fwhm_smooth=fwhm, high_pass_sec=filter_freq, detrend=True)
+            timeseries, mask_coord = extract_time_series(bold_paths=bold_list, roi_type='coords',
+                                                         roi_coords=roi_coordinates,
+                                                         radius_mm=roi_radius, fwhm_smooth=fwhm,
+                                                         high_pass_sec=filter_freq, detrend=True)
 
     raw_timeseries = extract_postcue_trs_for_conditions(events_data=beh_list, onset=onset_col, trial_name=condition_col,
                                                         bold_tr=scan_tr, bold_vols=volumes, conditions=condition_vals,
