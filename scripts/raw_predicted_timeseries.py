@@ -387,7 +387,7 @@ if __name__ == "__main__":
     task = args.task
     ses = args.ses
     run = args.run
-    roi_label = args.run
+    roi_label = args.roi_label
     roi_mask = args.roi_mask
     out_fold = args.output
 
