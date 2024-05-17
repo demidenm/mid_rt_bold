@@ -1,4 +1,5 @@
 import os
+import shutil
 import argparse
 import pandas as pd
 import numpy as np
@@ -428,6 +429,18 @@ if __name__ == "__main__":
                                                          roi_coords=roi_coordinates,
                                                          radius_mm=roi_radius, fwhm_smooth=fwhm,
                                                          high_pass_sec=filter_freq, detrend=True)
+
+    # save subject specific timeseries
+    if not os.path.exists(f'{out_fold}/sub_timeseries/'):
+        os.makedirs(f'{out_fold}/sub_timeseries/')
+
+    for i, sub in enumerate(bold_list):
+        base_vals = os.path.basename(sub).split('_')[0:4]
+        sub = '_'.join(base_vals)
+        sub_array = timeseries[i]
+        timeseries_name = f'{out_fold}/sub_timeseries/{sub}_run-{run}_timeseries-{roi_label}_' \
+                          f'scanner-{scanner}_{colname}_raw_timeseries.csv'
+        np.save(timeseries_name, sub_array)
 
     raw_timeseries = extract_postcue_trs_for_conditions(events_data=beh_list, onset=onset_col, trial_name=condition_col,
                                                         bold_tr=scan_tr, bold_vols=volumes, conditions=condition_vals,
