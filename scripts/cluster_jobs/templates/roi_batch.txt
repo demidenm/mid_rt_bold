@@ -3,10 +3,10 @@
 # define variables
 curr_dir=`pwd`
 ses="2YearFollowUpYArm1"
-run="01"
-task=RUN
+run=RUN
+task=TASK
 roi_label=ROILABEL
-roi_mask=ROIPATH
+roi_mask="${curr_dir}/../brain_mask/Left_${roi_label}.nii.gz"
 inp_deriv="/scratch.global/${USER}/siemens_scanner/subjects"
 inp_beh="/scratch.global/${USER}/siemens_scanner/subjects"
 output="/scratch.global/${USER}/siemens_scanner/files"
