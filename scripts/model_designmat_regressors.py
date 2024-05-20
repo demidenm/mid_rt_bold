@@ -90,11 +90,16 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
     :return: returns a design matrix for specified model
     """
 
-    # create a delinated hit v miss column so it is more clear
+    # create a delinated hit v miss column so it is more clear + probe specific dichotomization
     new_feedback_label = 'Feedback.Response'
     events_df[new_feedback_label] = np.where(events_df['prbacc'] == 1.0,
                                              events_df['Condition'] + '_hit',
                                              events_df['Condition'] + '_miss')
+
+    events_df['Probe.Type'] = np.where(events_df['prbacc'] == 1.0,
+                                       'prbhit_' + events_df['Condition'],
+                                       'prbmiss_' + events_df['Condition'])
+
     if rt_model == 'rt':
         try:
             # concat  cue onset/duration + feedback onset/duration + probe regressors
@@ -136,6 +141,29 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
         design_events = pd.DataFrame({'trial_type': conditions,
                                       'onset': onsets,
                                       'duration': duration})
+
+    elif rt_model == 'na-rt':
+        conditions = pd.concat([events_df.loc[:, 'Condition'],
+                                events_df.loc[:, 'Feedback.Response'],
+                                events_df.loc[:, 'Probe.Type']
+                                ], ignore_index=True)
+        onsets = pd.concat([events_df.loc[:, 'Cue.OnsetTime'],
+                            events_df.loc[:, 'Feedback.OnsetTime'],
+                            events_df.loc[:, 'Probe.OnsetTime']
+                            ], ignore_index=True)
+
+        duration = pd.concat([events_df.loc[:, 'Cue.Duration'],
+                              events_df.loc[:, 'FeedbackDuration'],
+                              events_df.loc[:, 'Probe.Duration']
+                              ], ignore_index=True)
+
+        # create pandas df with events
+        design_events = pd.DataFrame({
+            'trial_type': conditions,
+            'onset': onsets,
+            'duration': duration
+        })
+
     else:
         print("RT model should be None or True")
 
