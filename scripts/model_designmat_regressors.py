@@ -142,7 +142,7 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
                                       'onset': onsets,
                                       'duration': duration})
 
-    elif rt_model == 'na-rt':
+    elif rt_model == 'nort':
         conditions = pd.concat([events_df.loc[:, 'Condition'],
                                 events_df.loc[:, 'Feedback.Response'],
                                 events_df.loc[:, 'Probe.Type']

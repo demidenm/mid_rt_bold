@@ -93,7 +93,7 @@ for run in runs:
     # run to create design matrix
     conf_regressors = pull_regressors(confound_path=conf_path, regressor_type='opt2')
 
-    for model in [None, 'rt', 'na-rt']:
+    for model in [None, 'rt', 'nort']:
         design_matrix = create_design_mid(events_df=events_df, bold_tr=boldtr, num_volumes=numvols,
                                           conf_regressors=conf_regressors, rt_model=model,
                                           hrf_model='spm', stc=False)
@@ -110,7 +110,7 @@ for run in runs:
         # Run GLM model using set paths and calculate design matrix
         run_fmri_glm = fmri_glm.fit(nii_path, design_matrices=design_matrix)
         print('\t\t 3/3: From GLM model, create/save contrast beta/variance maps to output path')
-        if model is None or model == 'na-rt':
+        if model is None or model == 'nort':
             contrast_list = {key: value for key, value in contrast_labs.items() if key not in ['probe-base', 'rt-base']}
         elif model == 'rt':
             contrast_list = contrast_labs
@@ -129,8 +129,8 @@ for run in runs:
 
 print("Running Fixed effect model -- precision weight of runs for each contrast")
 
-for model in [None, 'rt', 'na-rt']:
-    if model is None or model == 'na-rt':
+for model in [None, 'rt', 'nort']:
+    if model is None or model == 'nort':
         contrast = [contrast for contrast in contrasts if contrast not in ['probe-base', 'rt-base']]
     elif model == 'rt':
         contrast = contrasts
