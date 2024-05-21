@@ -81,7 +81,7 @@ outdir = f'{tmp_rand}/randomise/{contrast}/{level}'
 if not os.path.exists(f'{outdir}'):
     os.makedirs(f'{outdir}')
 
-randomise_call = (f'randomise -i {diff_nifti_path}'
+randomise_call = (f'randomise_parallel -i {diff_nifti_path}'
                   f' -o {outdir}/subs-500_ses-{ses}_task-MID_contrast-{contrast}_diff-cue-rt_randomise'
                   f' -m {tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_mod-Cue-None_mask.nii.gz'
                   f' -1 -t {outdir}/desmat.con'

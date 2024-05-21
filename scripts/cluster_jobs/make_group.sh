@@ -10,9 +10,11 @@ subj_list=${1}
 inpfold=/scratch.global/${USER}/mid_rt_mod/firstlvl
 outfold=/scratch.global/${USER}/mid_rt_mod/group
 counter_start=9
-rt_mods=('mod-Cue-rt' 'mod-Cue-None')
+run_randomise=True  # True or False
+rt_mods=('mod-Cue-rt' 'mod-Cue-None' 'mod-Cue-probexcond')
 cuemod_contrasts=('LRew-Neut' 'ARew-Neut' 'LPun-Neut' 'APun-Neut' 'ARewHit-ARewMiss' 'LRewHit-LRewMiss' 'APunHit-APunMiss' 'LPunHit-LPunMiss' 'LRewHit-NeutHit')
 rtmod_contrasts=('LRew-Neut' 'ARew-Neut' 'LPun-Neut' 'APun-Neut' 'ARewHit-ARewMiss' 'LRewHit-LRewMiss' 'APunHit-APunMiss' 'LPunHit-LPunMiss' 'LRewHit-NeutHit' 'probe-base' 'rt-base')
+probexcond=('LRew-Neut' 'ARew-Neut' 'LPun-Neut' 'APun-Neut' 'ARewHit-ARewMiss' 'LRewHit-LRewMiss' 'APunHit-APunMiss' 'LPunHit-LPunMiss' 'LRewHit-NeutHit' 'probeLRew-probeNeut' 'probeARew-probeNeut' 'probeLPun-probeNeut' 'probeAPun-probeNeut' 'probeARewHit-probeARewMiss' 'probeLRewHit-probeLRewMiss' 'probeAPunHit-probeAPunMiss' 'probeLPunHit-probeLPunMiss' 'probeLRewHit-probeNeutHit')
 
 if [ -z "$1" ]; then
         echo
@@ -27,6 +29,7 @@ for model in ${rt_mods[@]} ; do
     for con in ${rtmod_contrasts[@]} ; do
       sed -e "s|MODEL|${model}|g; \
         s|RUN|${run}|g; \
+        s|RUNRAND|${run_randomise}|g; \
         s|SESSION|${ses}|g; \
         s|TASK|${task}|g; \
         s|CONTRAST|${con}|g; \
@@ -41,6 +44,7 @@ for model in ${rt_mods[@]} ; do
     for con in ${cuemod_contrasts[@]} ; do
       sed -e "s|MODEL|${model}|g; \
         s|RUN|${run}|g; \
+        s|RUNRAND|${run_randomise}|g; \
         s|SESSION|${ses}|g; \
         s|TASK|${task}|g; \
         s|CONTRAST|${con}|g; \
@@ -51,6 +55,20 @@ for model in ${rt_mods[@]} ; do
         s|SAMPLE|${sample}|g;" ./templates/abcd_group.txt > ./batch_jobs/group${n}
         n=$((n+1))
     done
+  elif [ "$model" == 'mod-Cue-probexcond' ]; then
+    for con in ${probexcond[@]} ; do
+      sed -e "s|MODEL|${model}|g; \
+        s|RUN|${run}|g; \
+        s|RUNRAND|${run_randomise}|g; \
+        s|SESSION|${ses}|g; \
+        s|TASK|${task}|g; \
+        s|CONTRAST|${con}|g; \
+        s|TYPE|${type}|g;  \
+        s|INPUT|${inpfold}|g; \
+        s|OUTPUT|${outfold}|g; \
+        s|SUBJ_IDS|${subj_list}|g; \
+        s|SAMPLE|${sample}|g;" ./templates/abcd_group.txt > ./batch_jobs/group${n}
+        n=$((n+1))
   fi
 
 done

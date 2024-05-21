@@ -321,7 +321,7 @@ def make_randomise_rt(comb_nii_path, outdir, permutations=1000):
     if not os.path.exists(f'{outdir}'):
         os.makedirs(f'{outdir}')
 
-    randomise_call = (f'randomise -i {inp_dir}/{file_name}'
+    randomise_call = (f'randomise_parallel -i {inp_dir}/{file_name}'
                       f' -o {outdir}/{file_noext}_randomise'
                       f' -m {inp_dir}/{file_noext}_mask.nii.gz'
                       f' -d {outdir}/desmat.mat -t {outdir}/desmat.con'
@@ -351,7 +351,7 @@ def make_randomise_grp(comb_nii_path, outdir, permutations=1000):
     inp_dir, file_name = os.path.split(comb_nii_path)
     file_noext, _ = os.path.splitext(file_name)
 
-    randomise_call = (f'randomise -i {inp_dir}/{file_name}'
+    randomise_call = (f'randomise_parallel -i {inp_dir}/{file_name}'
                       f' -o {outdir}/{file_noext}_randomise'
                       f' -m {inp_dir}/{file_noext}_mask.nii.gz'
                       f' -1 -t {outdir}/desmat.con'
