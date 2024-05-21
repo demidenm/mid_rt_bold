@@ -7,6 +7,7 @@ run=RUN
 ses=SESSION
 type=TYPE
 model=MODEL
+run_randomise=RRAND
 contrast=CONTRAST
 sub_list=SUBJ_IDS
 rt_file=/scratch.global/mdemiden/mid_rt_mod/subs_avg-overall-rts.csv
@@ -51,6 +52,7 @@ python ${script_dir}/group_estimate.py \
 		--mask ${mask} \
 		--contrast ${contrast} \
 		--model ${model} \
+		--randomise ${run_randomise} \
 		--input ${tmp_dir}/inp \
 		--output ${group_scratch}
 
