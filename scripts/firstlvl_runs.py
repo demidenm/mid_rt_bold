@@ -56,6 +56,19 @@ contrasts = [
     # probe maps
     'probe-base', 'rt-base'
 ]
+
+contrast_probxcond = [
+    # anticipatory contrasts for cue-model
+    'LRew-Neut', 'ARew-Neut', 'LPun-Neut', 'APun-Neut',
+    # feedback contrasts
+    'ARewHit-ARewMiss', 'LRewHit-LRewMiss', 'APunHit-APunMiss',
+    'LPunHit-LPunMiss', 'LRewHit-NeutHit',
+    # probe-by-condition
+    'probeLRew-probeNeut', 'probeARew-probeNeut', 'probeLPun-probeNeut', 'probeAPun-probeNeut',
+    'probeARewHit-probeARewMiss', 'probeLRewHit-probeLRewMiss', 'probeAPunHit-probeAPunMiss',
+    'probeLPunHit-probeLPunMiss', 'probeLRewHit-probeNeutHit'
+]
+
 contrast_labs = {
     # Anticipation
     'LRew-Neut': 'LgReward - Triangle',
@@ -68,9 +81,35 @@ contrast_labs = {
     'APunHit-APunMiss': 'LgPun_hit + SmallPun_hit - LgPun_miss - SmallPun_miss',
     'LPunHit-LPunMiss': 'LgPun_hit - LgPun_miss',
     'LRewHit-NeutHit': 'LgReward_hit - Triangle_hit',
-    #probe
+    # robe
     'probe-base': 'probe',
     'rt-base': 'probe_rt'
+}
+
+contrast_probxcond_labs = {
+    # Anticipation
+    'LRew-Neut': 'LgReward - Triangle',
+    'ARew-Neut': 'LgReward + SmallReward - 2*Triangle',
+    'LPun-Neut': 'LgPun - Triangle',
+    'APun-Neut': 'LgPun + SmallPun - 2*Triangle',
+    # Feedback
+    'ARewHit-ARewMiss': 'LgReward_hit + SmallReward_hit - LgReward_miss - SmallReward_miss',
+    'LRewHit-LRewMiss': 'LgReward_hit - LgReward_miss',
+    'APunHit-APunMiss': 'LgPun_hit + SmallPun_hit - LgPun_miss - SmallPun_miss',
+    'LPunHit-LPunMiss': 'LgPun_hit - LgPun_miss',
+    'LRewHit-NeutHit': 'LgReward_hit - Triangle_hit',
+    # probe-by-condition
+    'probeLRew-probeNeut': 'prbhit_LgReward + prbmiss_LgReward - prbhit_Triangle - prbmiss_Triangle',
+    'probeARew-probeNeut': '.5*prbhit_LgReward + .5*prbmiss_LgReward + .5*prbhit_SmallReward + .5*prbmiss_SmallReward -'
+                           '1*prbhit_Triangle - 1*prbmiss_Triangle',
+    'probeLPun-probeNeut': 'prbhit_LgPun + prbmiss_LgPun - prbhit_Triangle - prbmiss_Triangle',
+    'probeAPun-probeNeut': '.5*prbhit_LgPun + .5*prbmiss_LgPun + .5*prbhit_SmallPun + .5*prbmiss_SmallPun - '
+                           '1*prbhit_Triangle - 1*prbmiss_Triangle',
+    'probeARewHit-probeARewMiss': 'prbhit_LgReward + prbhit_SmallReward - prbmiss_LgReward - prbmiss_SmallReward',
+    'probeLRewHit-probeLRewMiss': 'prbhit_LgReward - prbmiss_LgReward',
+    'probeAPunHit-probeAPunMiss': 'prbhit_LgPun + prbhit_SmallPun - prbmiss_LgPun - prbmiss_SmallPun',
+    'probeLPunHit-probeLPunMiss': 'prbhit_LgPun - prbmiss_LgPun',
+    'probeLRewHit-probeNeutHit': 'prbhit_LgReward - prbhit_Triangle'
 }
 
 fwhm = 5
@@ -84,16 +123,16 @@ for run in runs:
 
     # get path to confounds from fmriprep, func data + mask, set image path
     conf_path = f'{fmriprep_path}/{subj}/ses-{ses}/func/{subj}_ses-{ses}_task-{task}_run-{run}' \
-            f'_desc-confounds_timeseries.tsv'
+                f'_desc-confounds_timeseries.tsv'
     nii_path = glob(
-    f'{fmriprep_path}/{subj}/ses-{ses}/func/{subj}_ses-{ses}_task-{task}_run-{run}'
-    f'_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz')[0]
+        f'{fmriprep_path}/{subj}/ses-{ses}/func/{subj}_ses-{ses}_task-{task}_run-{run}'
+        f'_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz')[0]
     print('\t\t 1/3 Create Regressors & Design Matrix for GLM')
     # get list of regressors
     # run to create design matrix
     conf_regressors = pull_regressors(confound_path=conf_path, regressor_type='opt2')
 
-    for model in [None, 'rt', 'nort']:
+    for model in [None, 'rt', 'probexcond']:
         design_matrix = create_design_mid(events_df=events_df, bold_tr=boldtr, num_volumes=numvols,
                                           conf_regressors=conf_regressors, rt_model=model,
                                           hrf_model='spm', stc=False)
@@ -110,10 +149,12 @@ for run in runs:
         # Run GLM model using set paths and calculate design matrix
         run_fmri_glm = fmri_glm.fit(nii_path, design_matrices=design_matrix)
         print('\t\t 3/3: From GLM model, create/save contrast beta/variance maps to output path')
-        if model is None or model == 'nort':
+        if model is None:
             contrast_list = {key: value for key, value in contrast_labs.items() if key not in ['probe-base', 'rt-base']}
         elif model == 'rt':
             contrast_list = contrast_labs
+        elif model == 'probexcond':
+            contrast_list = contrast_probxcond_labs
         else:
             print("Model should be RT or None")
 
@@ -129,11 +170,13 @@ for run in runs:
 
 print("Running Fixed effect model -- precision weight of runs for each contrast")
 
-for model in [None, 'rt', 'nort']:
-    if model is None or model == 'nort':
+for model in [None, 'rt', 'probexcond']:
+    if model is None:
         contrast = [contrast for contrast in contrasts if contrast not in ['probe-base', 'rt-base']]
     elif model == 'rt':
         contrast = contrasts
+    elif model == 'probexcond':
+        contrast = contrast_probxcond
     else:
         print("Model should be RT or None")
 
