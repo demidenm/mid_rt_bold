@@ -24,6 +24,8 @@ parser.add_argument("--task", help="task type -- e.g., mid, reward, etc")
 parser.add_argument("--run", help="Run lvl -- e.g., 1 or 2 (for 01 / 02)")
 parser.add_argument("--ses", help="session, include the session type without prefix 'ses', e.g., 1, 01, baselinearm1")
 parser.add_argument("--contrast", help="contrast label, e.g. 'LRew-Neut' or 'LPunHit-LPunMiss'")
+parser.add_argument("--a_mod", help="Model to subtract from e.g. mod-Cue-None, mod-Cue-rt, mod-Cue-probexcond")
+parser.add_argument("--b_mod", help="Model to subtract e.g. mod-Cue-None, mod-Cue-rt, mod-Cue-probexcond")
 parser.add_argument("--mask", help="path the to the binarized brain mask (e.g., MNI152 or "
                                    "constrained mask in MNI space, or None", default=None)
 parser.add_argument("--input", help="input path to data")
@@ -36,42 +38,43 @@ sample = args.sample
 task = args.task
 run = args.run
 ses = args.ses
+a_mod = args.a_mod
+b_mod = args.b_mod
 contrast = args.contrast
 brainmask = args.mask
 in_dir = args.input
 scratch_out = args.output
 
-# find all contrast fixed effect maps for model permutation across subjects
-nonrt_list = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*contrast-{contrast}_mod-Cue-None_stat-effect.nii.gz'))
-rt_list = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*contrast-{contrast}_mod-Cue-rt_stat-effect.nii.gz'))
+# find all contrast fixed effect maps for model permutation across subjects and get IDs to match to lists
+a_mod_list = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*contrast-{contrast}_{a_mod}_stat-effect.nii.gz'))
+b_mod_list = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*contrast-{contrast}_{b_mod}_stat-effect.nii.gz'))
+a_mod_ids = [os.path.basename(path).split('_')[0] for path in a_mod_list]
+b_mod_ids = [os.path.basename(path).split('_')[0] for path in b_mod_list]
 
-# subset id's RT times to match
-nonrt_ids = [os.path.basename(path).split('_')[0] for path in nonrt_list]
-rt_ids = [os.path.basename(path).split('_')[0] for path in rt_list]
-
-assert (np.array(nonrt_ids) == np.array(rt_ids)).all(), "Order of IDs in nort_ids != rt_ids."
+assert (np.array(a_mod_ids) == np.array(b_mod_ids)).all(), "Order of IDs in a_mod != b_mod."
 
 
 # randomise, permuted maps + corrected
 tmp_rand = f'{scratch_out}/randomise'
 # make nonrt & rt 4D
-make_4d_data_mask(bold_paths=nonrt_list, sess=ses, contrast_lab=contrast,
-                  model_type='mod-Cue-None', tmp_dir=f'{tmp_rand}/concat_imgs')
+make_4d_data_mask(bold_paths=a_mod_ids, sess=ses, contrast_lab=contrast,
+                  model_type=a_mod, tmp_dir=f'{tmp_rand}/concat_imgs')
 # make rt 4d
-make_4d_data_mask(bold_paths=rt_list, sess=ses, contrast_lab=contrast,
-                  model_type='mod-Cue-rt', tmp_dir=f'{tmp_rand}/concat_imgs')
+make_4d_data_mask(bold_paths=b_mod_ids, sess=ses, contrast_lab=contrast,
+                  model_type=b_mod, tmp_dir=f'{tmp_rand}/concat_imgs')
 
-nonrt_nii = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_mod-Cue-None.nii.gz'
-rt_nii = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_mod-Cue-rt.nii.gz'
+a_mod_nii = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_{a_mod}.nii.gz'
+b_mod_nii = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_{b_mod}.nii.gz'
 # estimate differences for randomise
-diff_nifti = math_img('img1 - img2', img1=nonrt_nii, img2=rt_nii)
-diff_nifti_path = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_diff-cue-rt.nii.gz'
+diff_nifti = math_img('img1 - img2', img1=a_mod_nii, img2=b_mod_nii)
+diff_label = f'diff-{a_mod.split("-")[-1]}-{b_mod.split("-")[-1]}'
+diff_nifti_path = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_{diff_label}.nii.gz'
 diff_nifti.to_filename(diff_nifti_path)
 
 
 # Create design matrix with intercept (1s) that's length of subjects/length of fixed_files
 level = 'grp/diff'
-design_matrix = pd.DataFrame({'int': [1] * len(nonrt_list)})
+design_matrix = pd.DataFrame({'int': [1] * len(a_mod_list)})
 make_randomise_files(desmat_final=design_matrix, regressor_names='int',
                      contrasts=['int'], outdir=f'{tmp_rand}/randomise/{contrast}/{level}')
 
@@ -82,8 +85,8 @@ if not os.path.exists(f'{outdir}'):
     os.makedirs(f'{outdir}')
 
 randomise_call = (f'randomise_parallel -i {diff_nifti_path}'
-                  f' -o {outdir}/subs-500_ses-{ses}_task-MID_contrast-{contrast}_diff-cue-rt_randomise'
-                  f' -m {tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_mod-Cue-None_mask.nii.gz'
+                  f' -o {outdir}/subs-500_ses-{ses}_task-MID_contrast-{contrast}_{diff_label}_randomise'
+                  f' -m {tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_{a_mod}_mask.nii.gz'
                   f' -1 -t {outdir}/desmat.con'
                   f' -f {outdir}/desmat.fts  -T -n 1000')
 randomise_call_file = Path(f'{outdir}/randomise_call.sh')
@@ -97,4 +100,3 @@ randomise_call_file.chmod(randomise_call_file.stat().st_mode | stat.S_IXGRP | st
 print("*** Running: *** /grp/diff", contrast)
 script_path = f'{outdir}/randomise_call.sh'
 subprocess.run(['bash', script_path])
-

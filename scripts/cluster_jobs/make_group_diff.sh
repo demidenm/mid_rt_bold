@@ -7,6 +7,8 @@ ses=2YearFollowUpYArm1
 type=session # run or session
 run=1 # 1 or 2, not used here
 subj_list=${1}
+a_mod="mod-Cue-rt" # mod-Cue-rt mod-Cue-None mod-Cue-probexcond
+b_mod="mod-Cue-probexcond" # mod-Cue-rt mod-Cue-None mod-Cue-probexcond
 inpfold=/scratch.global/${USER}/mid_rt_mod/firstlvl
 outfold=/scratch.global/${USER}/mid_rt_mod/group
 counter_start=0
@@ -24,6 +26,8 @@ for con in ${contrasts[@]} ; do
       sed -e "s|RUN|${run}|g; \
         s|SESSION|${ses}|g; \
         s|TASK|${task}|g; \
+        s|AMOD|${a_mod}|g; \
+        s|BMOD|${b_mod}|g; \
         s|CONTRAST|${con}|g; \
         s|TYPE|${type}|g;  \
         s|INPUT|${inpfold}|g; \
