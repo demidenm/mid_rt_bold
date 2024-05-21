@@ -57,10 +57,10 @@ assert (np.array(a_mod_ids) == np.array(b_mod_ids)).all(), "Order of IDs in a_mo
 # randomise, permuted maps + corrected
 tmp_rand = f'{scratch_out}/randomise'
 # make nonrt & rt 4D
-make_4d_data_mask(bold_paths=a_mod_ids, sess=ses, contrast_lab=contrast,
+make_4d_data_mask(bold_paths=a_mod_list, sess=ses, contrast_lab=contrast,
                   model_type=a_mod, tmp_dir=f'{tmp_rand}/concat_imgs')
 # make rt 4d
-make_4d_data_mask(bold_paths=b_mod_ids, sess=ses, contrast_lab=contrast,
+make_4d_data_mask(bold_paths=b_mod_list, sess=ses, contrast_lab=contrast,
                   model_type=b_mod, tmp_dir=f'{tmp_rand}/concat_imgs')
 
 a_mod_nii = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_{a_mod}.nii.gz'
