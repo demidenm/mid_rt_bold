@@ -159,14 +159,17 @@ for run in runs:
             print("Model should be RT or None")
 
         for con_name, con in contrast_list.items():
-            # calc beta
-            beta_name = f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_contrast-{con_name}_mod-Cue-{model}_stat-beta.nii.gz'
-            beta_est = run_fmri_glm.compute_contrast(con, output_type='effect_size')
-            beta_est.to_filename(beta_name)
-            # Calc: variance
-            var_name = f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_contrast-{con_name}_mod-Cue-{model}_stat-var.nii.gz'
-            var_est = run_fmri_glm.compute_contrast(con, output_type='effect_variance')
-            var_est.to_filename(var_name)
+            try:
+                beta_name = f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_contrast-{con_name}_mod-Cue-{model}_stat-beta.nii.gz'
+                beta_est = run_fmri_glm.compute_contrast(con, output_type='effect_size')
+                beta_est.to_filename(beta_name)
+                # Calc: variance
+                var_name = f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_contrast-{con_name}_mod-Cue-{model}_stat-var.nii.gz'
+                var_est = run_fmri_glm.compute_contrast(con, output_type='effect_variance')
+                var_est.to_filename(var_name)
+            except Exception as e:
+                print(f'Error processing beta: {e} for {subj} and {con_name}')
+
 
 print("Running Fixed effect model -- precision weight of runs for each contrast")
 

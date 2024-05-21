@@ -208,34 +208,38 @@ def fixed_effect(subject: str, session: str, task_type: str,
     :return: nothing return, files are saved
     """
     for contrast in contrast_list:
-        print(f"\t\t\t Creating weighted fix-eff model for contrast: {contrast}")
-        betas = sorted(glob(f'{firstlvl_indir}/{subject}_ses-{session}_task-{task_type}_run-*_'
-                            f'contrast-{contrast}_mod-Cue-{model_lab}_stat-beta.nii.gz'))
-        var = sorted(glob(f'{firstlvl_indir}/{subject}_ses-{session}_task-{task_type}_run-*_'
-                          f'contrast-{contrast}_mod-Cue-{model_lab}_stat-var.nii.gz'))
+        try:
+            print(f"\t\t\t Creating weighted fix-eff model for contrast: {contrast}")
+            betas = sorted(glob(f'{firstlvl_indir}/{subject}_ses-{session}_task-{task_type}_run-*_'
+                                f'contrast-{contrast}_mod-Cue-{model_lab}_stat-beta.nii.gz'))
+            var = sorted(glob(f'{firstlvl_indir}/{subject}_ses-{session}_task-{task_type}_run-*_'
+                              f'contrast-{contrast}_mod-Cue-{model_lab}_stat-var.nii.gz'))
 
-        # conpute_fixed_effects options
-        # (1) contrast map of the effect across runs;
-        # (2) var map of between runs effect;
-        # (3) t-statistic based on effect of variance;
-        fix_effect, fix_var, fix_tstat = compute_fixed_effects(contrast_imgs=betas,
-                                                               variance_imgs=var,
-                                                               precision_weighted=True)
-        if not os.path.exists(fixedeffect_outdir):
-            os.makedirs(fixedeffect_outdir)
-            print("Directory created:", fixedeffect_outdir)
-        if save_beta:
-            fix_effect_out = f'{fixedeffect_outdir}/{subject}_ses-{session}_task-{task_type}_' \
-                             f'contrast-{contrast}_mod-Cue-{model_lab}_stat-effect.nii.gz'
-            fix_effect.to_filename(fix_effect_out)
-        if save_var:
-            fix_var_out = f'{fixedeffect_outdir}/{subject}_ses-{session}_task-{task_type}_' \
-                          f'contrast-{contrast}_mod-Cue-{model_lab}_stat-var.nii.gz'
-            fix_var.to_filename(fix_var_out)
-        if save_tstat:
-            fix_tstat_out = f'{fixedeffect_outdir}/{subject}_ses-{session}_task-{task_type}_' \
-                            f'contrast-{contrast}_mod-Cue-{model_lab}_stat-tstat.nii.gz'
-            fix_tstat.to_filename(fix_tstat_out)
+            # conpute_fixed_effects options
+            # (1) contrast map of the effect across runs;
+            # (2) var map of between runs effect;
+            # (3) t-statistic based on effect of variance;
+            fix_effect, fix_var, fix_tstat = compute_fixed_effects(contrast_imgs=betas,
+                                                                   variance_imgs=var,
+                                                                   precision_weighted=True)
+            if not os.path.exists(fixedeffect_outdir):
+                os.makedirs(fixedeffect_outdir)
+                print("Directory created:", fixedeffect_outdir)
+            if save_beta:
+                fix_effect_out = f'{fixedeffect_outdir}/{subject}_ses-{session}_task-{task_type}_' \
+                                 f'contrast-{contrast}_mod-Cue-{model_lab}_stat-effect.nii.gz'
+                fix_effect.to_filename(fix_effect_out)
+            if save_var:
+                fix_var_out = f'{fixedeffect_outdir}/{subject}_ses-{session}_task-{task_type}_' \
+                              f'contrast-{contrast}_mod-Cue-{model_lab}_stat-var.nii.gz'
+                fix_var.to_filename(fix_var_out)
+            if save_tstat:
+                fix_tstat_out = f'{fixedeffect_outdir}/{subject}_ses-{session}_task-{task_type}_' \
+                                f'contrast-{contrast}_mod-Cue-{model_lab}_stat-tstat.nii.gz'
+                fix_tstat.to_filename(fix_tstat_out)
+        except Exception as e:
+            print(f'Error processing Fixed Effect: {e} for {subject} and {contrast}')
+
 
 
 # Jeanette Mumfords code to incorporate randomise into grp and rt models (not, separating due to randomise issues)
