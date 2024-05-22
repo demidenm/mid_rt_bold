@@ -7,11 +7,11 @@ ses=2YearFollowUpYArm1
 type=session # run or session
 run=1 # 1 or 2, not used here
 subj_list=${1}
-a_mod="mod-Cue-rt" # mod-Cue-rt mod-Cue-None mod-Cue-probexcond
+a_mod="mod-Cue-None" # mod-Cue-rt mod-Cue-None mod-Cue-probexcond
 b_mod="mod-Cue-probexcond" # mod-Cue-rt mod-Cue-None mod-Cue-probexcond
 inpfold=/scratch.global/${USER}/mid_rt_mod/firstlvl
 outfold=/scratch.global/${USER}/mid_rt_mod/group
-counter_start=0
+counter_start=9
 contrasts=('LRew-Neut' 'ARew-Neut' 'LPun-Neut' 'APun-Neut' 'ARewHit-ARewMiss' 'LRewHit-LRewMiss' 'APunHit-APunMiss' 'LPunHit-LPunMiss' 'LRewHit-NeutHit')
 
 if [ -z "$1" ]; then
