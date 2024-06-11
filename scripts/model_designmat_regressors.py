@@ -142,6 +142,18 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
                                       'onset': onsets,
                                       'duration': duration})
 
+    elif rt_model is 'dairc':
+        conditions = pd.concat([events_df.loc[:, 'Condition'],
+                                events_df.loc[:, new_feedback_label]],
+                               ignore_index=True)
+        onsets = pd.concat([events_df.loc[:, 'Cue.OnsetTime'],
+                            events_df.loc[:, 'Feedback.OnsetTime']],
+                           ignore_index=True)
+        durations = pd.Series([0] * len(onsets))
+        design_events = pd.DataFrame({'trial_type': conditions,
+                                      'onset': onsets,
+                                      'duration': durations})
+
     elif rt_model == 'probexcond':
         conditions = pd.concat([events_df.loc[:, 'Condition'],
                                 events_df.loc[:, 'Feedback.Response'],
@@ -177,7 +189,7 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
     design_matrix_mid = make_first_level_design_matrix(
         frame_times=frame_times,
         events=design_events,
-        hrf_model=hrf_model,
+        hrf_model='spm + derivative' if rt_model == 'dairc' else hrf_model,
         drift_model=None,
         add_regs=conf_regressors
         )

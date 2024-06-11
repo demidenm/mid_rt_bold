@@ -68,7 +68,7 @@ parser.add_argument("--run", help="Run lvl -- e.g., 1 or 2 (for 01 / 02)")
 parser.add_argument("--rt_file", help="File to subject level rt data(for 01 / 02)", default=None)
 parser.add_argument("--ses", help="session, include the session type without prefix 'ses', e.g., 1, 01, baselinearm1")
 parser.add_argument("--model", help="model label,"
-                                    " e.g. 'mod-Cue-rt' or 'mod-Cue-None'")
+                                    " e.g. 'mod-Cue-rt' or 'mod-Cue-None, mod-dairc'")
 parser.add_argument("--contrast", help="contrast label, e.g. 'LRew-Neut' or 'LPunHit-LPunMiss'")
 parser.add_argument("--mask", help="path the to the binarized brain mask (e.g., MNI152 or "
                                    "constrained mask in MNI space, or None")

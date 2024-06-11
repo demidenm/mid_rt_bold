@@ -114,7 +114,7 @@ contrast_probxcond_labs = {
 
 fwhm = 5
 runs = ['01', '02']
-
+model_list = [None, 'rt', 'probexcond', 'dairc']
 for run in runs:
     print(f'\tStarting {subj} {run}.')
     # import behavior events .tsv from data path
@@ -132,7 +132,7 @@ for run in runs:
     # run to create design matrix
     conf_regressors = pull_regressors(confound_path=conf_path, regressor_type='opt2')
 
-    for model in [None, 'rt', 'probexcond']:
+    for model in model_list:
         design_matrix = create_design_mid(events_df=events_df, bold_tr=boldtr, num_volumes=numvols,
                                           conf_regressors=conf_regressors, rt_model=model,
                                           hrf_model='spm', stc=False)
@@ -149,7 +149,7 @@ for run in runs:
         # Run GLM model using set paths and calculate design matrix
         run_fmri_glm = fmri_glm.fit(nii_path, design_matrices=design_matrix)
         print('\t\t 3/3: From GLM model, create/save contrast beta/variance maps to output path')
-        if model is None:
+        if model in [None, 'dairc']:
             contrast_list = {key: value for key, value in contrast_labs.items() if key not in ['probe-base', 'rt-base']}
         elif model == 'rt':
             contrast_list = contrast_labs
@@ -173,8 +173,8 @@ for run in runs:
 
 print("Running Fixed effect model -- precision weight of runs for each contrast")
 
-for model in [None, 'rt', 'probexcond']:
-    if model is None:
+for model in model_list:
+    if model in [None, 'dairc']:
         contrast = [contrast for contrast in contrasts if contrast not in ['probe-base', 'rt-base']]
     elif model == 'rt':
         contrast = contrasts
