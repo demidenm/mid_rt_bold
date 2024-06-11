@@ -61,6 +61,16 @@ def group_onesample(fixedeffect_paths: list, session: str, task_type: str,
         tstat_map.to_filename(tstat_out)
 
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 parser = argparse.ArgumentParser(description="Script to run first level task models w/ nilearn")
 parser.add_argument("--sample", help="sample type, ahrb, abcd or mls?")
 parser.add_argument("--task", help="task type -- e.g., mid, reward, etc")
@@ -72,7 +82,7 @@ parser.add_argument("--model", help="model label,"
 parser.add_argument("--contrast", help="contrast label, e.g. 'LRew-Neut' or 'LPunHit-LPunMiss'")
 parser.add_argument("--mask", help="path the to the binarized brain mask (e.g., MNI152 or "
                                    "constrained mask in MNI space, or None")
-parser.add_argument("--randomise", help="To run or not, True/False", default=True)
+parser.add_argument("--randomise", type=str2bool, help="To run or not, True/False", default=True)
 parser.add_argument("--input", help="input path to data")
 parser.add_argument("--output", help="output folder where to write out and save information")
 
