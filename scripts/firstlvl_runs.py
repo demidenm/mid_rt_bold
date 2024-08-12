@@ -49,20 +49,20 @@ scratch_out = args.output
 
 contrasts = [
     # anticipatory contrasts for cue-model
-    'LRew-Neut', 'ARew-Neut', 'LPun-Neut', 'APun-Neut',
+    'LRew-Neut', 'ARew-Neut', 'LPun-Neut', 'APun-Neut', 'LRew-Base',
     # feedback contrasts
     'ARewHit-ARewMiss', 'LRewHit-LRewMiss', 'APunHit-APunMiss',
-    'LPunHit-LPunMiss', 'LRewHit-NeutHit',
+    'LPunHit-LPunMiss', 'LRewHit-NeutHit', 'LRewHit-Base',
     # probe maps
     'probe-base', 'rt-base'
 ]
 
 contrast_probxcond = [
     # anticipatory contrasts for cue-model
-    'LRew-Neut', 'ARew-Neut', 'LPun-Neut', 'APun-Neut',
+    'LRew-Neut', 'ARew-Neut', 'LPun-Neut', 'APun-Neut', 'LRew-Base',
     # feedback contrasts
     'ARewHit-ARewMiss', 'LRewHit-LRewMiss', 'APunHit-APunMiss',
-    'LPunHit-LPunMiss', 'LRewHit-NeutHit',
+    'LPunHit-LPunMiss', 'LRewHit-NeutHit', 'LRewHit-Base',
     # probe-by-condition
     'probeLRew-probeNeut', 'probeARew-probeNeut', 'probeLPun-probeNeut', 'probeAPun-probeNeut',
     'probeARewHit-probeARewMiss', 'probeLRewHit-probeLRewMiss', 'probeAPunHit-probeAPunMiss',
@@ -75,12 +75,15 @@ contrast_labs = {
     'ARew-Neut': 'LgReward + SmallReward - 2*Triangle',
     'LPun-Neut': 'LgPun - Triangle',
     'APun-Neut': 'LgPun + SmallPun - 2*Triangle',
+    'LRew-Base': 'LgReward',
+
     # Feedback
     'ARewHit-ARewMiss': 'LgReward_hit + SmallReward_hit - LgReward_miss - SmallReward_miss',
     'LRewHit-LRewMiss': 'LgReward_hit - LgReward_miss',
     'APunHit-APunMiss': 'LgPun_hit + SmallPun_hit - LgPun_miss - SmallPun_miss',
     'LPunHit-LPunMiss': 'LgPun_hit - LgPun_miss',
     'LRewHit-NeutHit': 'LgReward_hit - Triangle_hit',
+    'LRewHit-Base': 'LgReward_hit',
     # robe
     'probe-base': 'probe',
     'rt-base': 'probe_rt'
@@ -92,12 +95,14 @@ contrast_probxcond_labs = {
     'ARew-Neut': 'LgReward + SmallReward - 2*Triangle',
     'LPun-Neut': 'LgPun - Triangle',
     'APun-Neut': 'LgPun + SmallPun - 2*Triangle',
+    'LRew-Base': 'LgReward',
     # Feedback
     'ARewHit-ARewMiss': 'LgReward_hit + SmallReward_hit - LgReward_miss - SmallReward_miss',
     'LRewHit-LRewMiss': 'LgReward_hit - LgReward_miss',
     'APunHit-APunMiss': 'LgPun_hit + SmallPun_hit - LgPun_miss - SmallPun_miss',
     'LPunHit-LPunMiss': 'LgPun_hit - LgPun_miss',
     'LRewHit-NeutHit': 'LgReward_hit - Triangle_hit',
+    'LRewHit-Base': 'LgReward_hit',
     # probe-by-condition
     'probeLRew-probeNeut': 'prbhit_LgReward + prbmiss_LgReward - prbhit_Triangle - prbmiss_Triangle',
     'probeARew-probeNeut': '.5*prbhit_LgReward + .5*prbmiss_LgReward + .5*prbhit_SmallReward + .5*prbmiss_SmallReward -'
@@ -114,7 +119,7 @@ contrast_probxcond_labs = {
 
 fwhm = 5
 runs = ['01', '02']
-model_list = [None, 'rt', 'probexcond', 'dairc']
+model_list = [None, 'rt', 'probexcond', 'rtfull', 'dairc']
 for run in runs:
     print(f'\tStarting {subj} {run}.')
     # import behavior events .tsv from data path
@@ -151,7 +156,7 @@ for run in runs:
         print('\t\t 3/3: From GLM model, create/save contrast beta/variance maps to output path')
         if model in [None, 'dairc']:
             contrast_list = {key: value for key, value in contrast_labs.items() if key not in ['probe-base', 'rt-base']}
-        elif model == 'rt':
+        elif model in ['rt','rtfull']:
             contrast_list = contrast_labs
         elif model == 'probexcond':
             contrast_list = contrast_probxcond_labs

@@ -176,6 +176,35 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
             'duration': duration
         })
 
+    if rt_model == 'rtfull':
+        try:
+            # concat  cue onset/duration + feedback onset/duration + probe regressors
+            conditions = pd.concat([events_df.loc[:, "Condition"],
+                                    events_df.loc[:, "Feedback.Response"],
+                                    pd.Series(["probe"] * len(events_df[['OverallRT', 'Probe.OnsetTime']])),
+                                    pd.Series(["probe_rt"] * len(events_df[['OverallRT', 'Probe.OnsetTime']].dropna()))
+                                    ], ignore_index=True)
+            onsets = pd.concat([events_df.loc[:, 'Cue.OnsetTime'],
+                                events_df.loc[:, "Feedback.OnsetTime"],
+                                events_df.loc[:, "Probe.OnsetTime"],
+                                events_df[['OverallRT', 'Probe.OnsetTime']].dropna()['Probe.OnsetTime']
+                                ], ignore_index=True)
+            duration = pd.concat([events_df.loc[:, 'Cue.Duration'] + events_df.loc[:, 'Anticipation.Duration'],
+                                  events_df.loc[:, "FeedbackDuration"],
+                                  events_df.loc[:, "Probe.Duration"],
+                                  # convert ms RT times to secs to serve as duration
+                                  (events_df[['OverallRT', 'Probe.OnsetTime']].dropna()['OverallRT']) / 1000
+                                  ], ignore_index=True)
+
+            # create pandas df with events
+            design_events = pd.DataFrame({
+                'trial_type': conditions,
+                'onset': onsets,
+                'duration': duration
+            })
+        except Exception as e:
+            print("When creating RT design matrix, an error occurred: ", e)
+
     else:
         print("RT model should be None or True")
 
