@@ -26,7 +26,7 @@ fi
 
 n=${counter_start}
 for model in ${rt_mods[@]} ; do
-  if [ "$model" == 'mod-Cue-rt' ]; then
+  if [ "$model" == 'mod-Cue-rt' ] || [ "$model" == 'mod-Cue-rtfull' ]; then
     for con in ${rtmod_contrasts[@]} ; do
       sed -e "s|MODEL|${model}|g; \
         s|RUN|${run}|g; \
