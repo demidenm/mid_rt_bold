@@ -180,16 +180,19 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
         try:
             # concat  cue onset/duration + feedback onset/duration + probe regressors
             conditions = pd.concat([events_df.loc[:, "Condition"],
+                                    events_df.loc[:, 'Condition'] + '_fix',
                                     events_df.loc[:, "Feedback.Response"],
                                     pd.Series(["probe"] * len(events_df[['OverallRT', 'Probe.OnsetTime']])),
                                     pd.Series(["probe_rt"] * len(events_df[['OverallRT', 'Probe.OnsetTime']].dropna()))
                                     ], ignore_index=True)
             onsets = pd.concat([events_df.loc[:, 'Cue.OnsetTime'],
+                                events_df.loc[:, 'Anticipation.OnsetTime'],
                                 events_df.loc[:, "Feedback.OnsetTime"],
                                 events_df.loc[:, "Probe.OnsetTime"],
                                 events_df[['OverallRT', 'Probe.OnsetTime']].dropna()['Probe.OnsetTime']
                                 ], ignore_index=True)
-            duration = pd.concat([events_df.loc[:, 'Cue.Duration'] + events_df.loc[:, 'Anticipation.Duration'],
+            duration = pd.concat([events_df.loc[:, 'Cue.Duration'],
+                                  events_df.loc[:, 'Anticipation.Duration'],
                                   events_df.loc[:, "FeedbackDuration"],
                                   events_df.loc[:, "Probe.Duration"],
                                   # convert ms RT times to secs to serve as duration

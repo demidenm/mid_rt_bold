@@ -57,6 +57,14 @@ contrasts = [
     'probe-base', 'rt-base'
 ]
 
+fix_contrast = [
+    'LRew-Neut', 'ARew-Neut', 'LRew-Base',
+    'LRewHit-LRewMiss', 'LRewHit-Base',
+    # probe maps
+    'probe-base', 'rt-base'
+
+]
+
 contrast_probxcond = [
     # anticipatory contrasts for cue-model
     'LRew-Neut', 'ARew-Neut', 'LPun-Neut', 'APun-Neut', 'LRew-Base',
@@ -87,6 +95,19 @@ contrast_labs = {
     # robe
     'probe-base': 'probe',
     'rt-base': 'probe_rt'
+}
+
+fix_contrast_labs = {
+    'LRew-Neut': 'LgReward_fix - Triangle_fix',
+    'ARew-Neut': 'LgReward_fix + SmallReward_fix - 2*Triangle_fix',
+    'LRew-Base': 'LgReward_fix',
+    'LRewHit-LRewMiss': 'LgReward_hit - LgReward_miss',
+    'LRewHit-Base': 'LgReward_hit',
+
+    # probe maps
+    'probe-base': 'probe',
+    'rt-base': 'probe_rt'
+
 }
 
 contrast_probxcond_labs = {
@@ -156,8 +177,10 @@ for run in runs:
         print('\t\t 3/3: From GLM model, create/save contrast beta/variance maps to output path')
         if model in [None, 'dairc']:
             contrast_list = {key: value for key, value in contrast_labs.items() if key not in ['probe-base', 'rt-base']}
-        elif model in ['rt','rtfull']:
+        elif model == 'rt':
             contrast_list = contrast_labs
+        elif model == 'rtfull':
+            contrast_list = fix_contrast_labs
         elif model == 'probexcond':
             contrast_list = contrast_probxcond_labs
         else:
@@ -183,6 +206,8 @@ for model in model_list:
         contrast = [contrast for contrast in contrasts if contrast not in ['probe-base', 'rt-base']]
     elif model == 'rt':
         contrast = contrasts
+    elif model == 'rtfull':
+        contrast = fix_contrast
     elif model == 'probexcond':
         contrast = contrast_probxcond
     else:
