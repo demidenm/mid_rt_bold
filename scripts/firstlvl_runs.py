@@ -99,13 +99,17 @@ contrast_labs = {
 }
 
 fix_contrast_labs = {
+    # Ant Cue
     'LRew-Neut': 'LgReward - Triangle',
     'ARew-Neut': 'LgReward + SmallReward - 2*Triangle',
     'LRew-Base': 'LgReward',
+    # Ant Fix
     'LRew-Neut-fix': 'LgReward_fix - Triangle_fix',
     'ARew-Neut-fix': 'LgReward_fix + SmallReward_fix - 2*Triangle_fix',
     'LRew-Base-fix': 'LgReward_fix',
-
+    # feedback
+    'LRewHit-NeutHit': 'LgReward_hit - Triangle_hit',
+    'LRewHit-Base': 'LgReward_hit',
     # probe maps
     'probe-base': 'probe',
     'rt-base': 'probe_rt'
