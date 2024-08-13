@@ -59,6 +59,7 @@ contrasts = [
 
 fix_contrast = [
     'LRew-Neut', 'ARew-Neut', 'LRew-Base',
+    'LRew-Neut-fix', 'ARew-Neut-fix', 'LRew-Base-fix',
     'LRewHit-LRewMiss', 'LRewHit-Base',
     # probe maps
     'probe-base', 'rt-base'
@@ -98,11 +99,12 @@ contrast_labs = {
 }
 
 fix_contrast_labs = {
-    'LRew-Neut': 'LgReward_fix - Triangle_fix',
-    'ARew-Neut': 'LgReward_fix + SmallReward_fix - 2*Triangle_fix',
-    'LRew-Base': 'LgReward_fix',
-    'LRewHit-LRewMiss': 'LgReward_hit - LgReward_miss',
-    'LRewHit-Base': 'LgReward_hit',
+    'LRew-Neut': 'LgReward - Triangle',
+    'ARew-Neut': 'LgReward + SmallReward - 2*Triangle',
+    'LRew-Base': 'LgReward',
+    'LRew-Neut-fix': 'LgReward_fix - Triangle_fix',
+    'ARew-Neut-fix': 'LgReward_fix + SmallReward_fix - 2*Triangle_fix',
+    'LRew-Base-fix': 'LgReward_fix',
 
     # probe maps
     'probe-base': 'probe',

@@ -10,13 +10,13 @@ subj_list=${1}
 inpfold=/scratch.global/${USER}/mid_rt_mod/firstlvl
 outfold=/scratch.global/${USER}/mid_rt_mod/group
 counter_start=0
-run_randomise=False  # True or False
-rt_mods=('mod-Cue-rt' 'mod-Cue-None' 'mod-Cue-probexcond','mod-Cue-rtfull')
-rtfull_contrast=('LRew-Neut' 'ARew-Neut' 'LRew-Base', 'LRewHit-LRewMiss' 'LRewHit-Base' 'probe-base' 'rt-base')
-cuemod_contrasts=('LRew-Neut' 'ARew-Neut' 'LPun-Neut' 'APun-Neut' 'ARewHit-ARewMiss' 'LRewHit-LRewMiss' 'APunHit-APunMiss' 'LPunHit-LPunMiss' 'LRewHit-NeutHit', 'LRew-Base', 'LRewHit-Base')
-rtmod_contrasts=('LRew-Neut' 'ARew-Neut' 'LPun-Neut' 'APun-Neut' 'ARewHit-ARewMiss' 'LRewHit-LRewMiss' 'APunHit-APunMiss' 'LPunHit-LPunMiss' 'LRewHit-NeutHit' 'probe-base' 'rt-base', 'LRew-Base', 'LRewHit-Base')
+run_randomise=True  # True or False
+rt_mods=('mod-Cue-rt' 'mod-Cue-None' 'mod-Cue-probexcond' 'mod-Cue-rtfull')
+rtfull_contrast=('LRew-Neut' 'ARew-Neut' 'LRew-Base' 'LRew-Neut-fix' 'ARew-Neut-fix' 'LRew-Base-fix' 'LRewHit-LRewMiss' 'LRewHit-Base' 'probe-base' 'rt-base')
+cuemod_contrasts=('LRew-Neut' 'ARew-Neut' 'LPun-Neut' 'APun-Neut' 'ARewHit-ARewMiss' 'LRewHit-LRewMiss' 'APunHit-APunMiss' 'LPunHit-LPunMiss' 'LRewHit-NeutHit' 'LRew-Base' 'LRewHit-Base')
+rtmod_contrasts=('LRew-Neut' 'ARew-Neut' 'LPun-Neut' 'APun-Neut' 'ARewHit-ARewMiss' 'LRewHit-LRewMiss' 'APunHit-APunMiss' 'LPunHit-LPunMiss' 'LRewHit-NeutHit' 'probe-base' 'rt-base' 'LRew-Base' 'LRewHit-Base')
 #probexcond=('LRew-Neut' 'ARew-Neut' 'LPun-Neut' 'APun-Neut' 'ARewHit-ARewMiss' 'LRewHit-LRewMiss' 'APunHit-APunMiss' 'LPunHit-LPunMiss' 'LRewHit-NeutHit')
-probexcond=('probeLRew-probeNeut' 'probeARew-probeNeut' 'probeLPun-probeNeut' 'probeAPun-probeNeut' 'probeARewHit-probeARewMiss' 'probeLRewHit-probeLRewMiss' 'probeAPunHit-probeAPunMiss' 'probeLPunHit-probeLPunMiss' 'probeLRewHit-probeNeutHit', 'LRew-Base', 'LRewHit-Base')
+probexcond=('probeLRew-probeNeut' 'probeARew-probeNeut' 'probeLPun-probeNeut' 'probeAPun-probeNeut' 'probeARewHit-probeARewMiss' 'probeLRewHit-probeLRewMiss' 'probeAPunHit-probeAPunMiss' 'probeLPunHit-probeLPunMiss' 'probeLRewHit-probeNeutHit' 'LRew-Base' 'LRewHit-Base')
 
 if [ -z "$1" ]; then
         echo
