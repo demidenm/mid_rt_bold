@@ -93,81 +93,56 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
     # create a delinated hit v miss column so it is more clear + probe specific dichotomization
     new_feedback_label = 'Feedback.Response'
     events_df[new_feedback_label] = np.where(events_df['prbacc'] == 1.0,
-                                             events_df['Condition'] + '_hit',
-                                             events_df['Condition'] + '_miss')
+                                             events_df['Condition'] + 'Hit',
+                                             events_df['Condition'] + 'Miss')
 
     events_df['Probe.Type'] = np.where(events_df['prbacc'] == 1.0,
                                        'prbhit_' + events_df['Condition'],
                                        'prbmiss_' + events_df['Condition'])
 
-    if rt_model == 'rt':
-        try:
-            # concat  cue onset/duration + feedback onset/duration + probe regressors
-            conditions = pd.concat([events_df.loc[:, "Condition"],
-                                    events_df.loc[:, "Feedback.Response"],
-                                    pd.Series(["probe"] * len(events_df[['OverallRT', 'Probe.OnsetTime']])),
-                                    pd.Series(["probe_rt"] * len(events_df[['OverallRT', 'Probe.OnsetTime']].dropna()))
-                                    ], ignore_index=True)
-            onsets = pd.concat([events_df.loc[:, 'Cue.OnsetTime'],
-                                events_df.loc[:, "Feedback.OnsetTime"],
-                                events_df.loc[:, "Probe.OnsetTime"],
-                                events_df[['OverallRT', 'Probe.OnsetTime']].dropna()['Probe.OnsetTime']
-                                ], ignore_index=True)
-            duration = pd.concat([events_df.loc[:, 'Cue.Duration'],
-                                  events_df.loc[:, "FeedbackDuration"],
-                                  events_df.loc[:, "Probe.Duration"],
-                                  # convert ms RT times to secs to serve as duration
-                                  (events_df[['OverallRT', 'Probe.OnsetTime']].dropna()['OverallRT']) / 1000
-                                  ], ignore_index=True)
-
-            # create pandas df with events
-            design_events = pd.DataFrame({
-                'trial_type': conditions,
-                'onset': onsets,
-                'duration': duration
-            })
-        except Exception as e:
-            print("When creating RT design matrix, an error occurred: ", e)
-
-    elif rt_model is None:
-        # concat only cue onset/duration + feedback onset + duration
+    if rt_model is None:
+        # CONDITIONS
         conditions = pd.concat([events_df.loc[:, "Condition"], events_df.loc[:, new_feedback_label]],
                                ignore_index=True)
+        # ONSETS
         onsets = pd.concat([events_df.loc[:, 'Cue.OnsetTime'], events_df.loc[:, "Feedback.OnsetTime"]],
                            ignore_index=True)
-        duration = pd.concat([events_df.loc[:, 'Cue.Duration'], events_df.loc[:, "FeedbackDuration"]],
+        # DURATIONS
+        duration = pd.concat([events_df.loc[:, 'Cue.OnsetToOnsetTime'], events_df.loc[:, "Feedback.OnsetToOnsetTime"]],
                              ignore_index=True)
         # create pandas df with events
         design_events = pd.DataFrame({'trial_type': conditions,
                                       'onset': onsets,
                                       'duration': duration})
-
-    elif rt_model is 'dairc':
+    elif rt_model is 'CueNoDeriv':
+        # CONDITIONS
         conditions = pd.concat([events_df.loc[:, 'Condition'],
                                 events_df.loc[:, new_feedback_label]],
                                ignore_index=True)
+        # ONSETS
         onsets = pd.concat([events_df.loc[:, 'Cue.OnsetTime'],
                             events_df.loc[:, 'Feedback.OnsetTime']],
                            ignore_index=True)
+        # DURATIONS
         durations = pd.Series([0] * len(onsets))
         design_events = pd.DataFrame({'trial_type': conditions,
                                       'onset': onsets,
                                       'duration': durations})
 
-    elif rt_model == 'probexcond':
+    elif rt_model is 'CueYesDeriv':
+        # CONDITIONS
         conditions = pd.concat([events_df.loc[:, 'Condition'],
-                                events_df.loc[:, 'Feedback.Response'],
-                                events_df.loc[:, 'Probe.Type']
-                                ], ignore_index=True)
+                                events_df.loc[:, new_feedback_label]],
+                               ignore_index=True)
+        # ONSETS
         onsets = pd.concat([events_df.loc[:, 'Cue.OnsetTime'],
-                            events_df.loc[:, 'Feedback.OnsetTime'],
-                            events_df.loc[:, 'Probe.OnsetTime']
-                            ], ignore_index=True)
-
-        duration = pd.concat([events_df.loc[:, 'Cue.Duration'],
-                              events_df.loc[:, 'FeedbackDuration'],
-                              events_df.loc[:, 'Probe.Duration']
-                              ], ignore_index=True)
+                            events_df.loc[:, 'Feedback.OnsetTime']],
+                           ignore_index=True)
+        # DURATIONS
+        durations = pd.Series([0] * len(onsets))
+        design_events = pd.DataFrame({'trial_type': conditions,
+                                      'onset': onsets,
+                                      'duration': durations})
 
         # create pandas df with events
         design_events = pd.DataFrame({
@@ -176,25 +151,29 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
             'duration': duration
         })
 
-    if rt_model == 'rtfull':
+    if rt_model == 'Saturated':
         try:
             # concat  cue onset/duration + feedback onset/duration + probe regressors
+            # CONDITIONS
             conditions = pd.concat([events_df.loc[:, "Condition"],
-                                    events_df.loc[:, 'Condition'] + '_fix',
+                                    'Fix' + events_df.loc[:, 'Condition'],
                                     events_df.loc[:, "Feedback.Response"],
                                     pd.Series(["probe"] * len(events_df[['OverallRT', 'Probe.OnsetTime']])),
                                     pd.Series(["probe_rt"] * len(events_df[['OverallRT', 'Probe.OnsetTime']].dropna()))
                                     ], ignore_index=True)
+            
+            # ONSETS
             onsets = pd.concat([events_df.loc[:, 'Cue.OnsetTime'],
                                 events_df.loc[:, 'Anticipation.OnsetTime'],
                                 events_df.loc[:, "Feedback.OnsetTime"],
                                 events_df.loc[:, "Probe.OnsetTime"],
                                 events_df[['OverallRT', 'Probe.OnsetTime']].dropna()['Probe.OnsetTime']
                                 ], ignore_index=True)
-            duration = pd.concat([events_df.loc[:, 'Cue.Duration'],
-                                  events_df.loc[:, 'Anticipation.Duration'],
-                                  events_df.loc[:, "FeedbackDuration"],
-                                  events_df.loc[:, "Probe.Duration"],
+            # DURATIONS
+            duration = pd.concat([events_df.loc[:, 'Cue.OnsetToOnsetTime'],
+                                  events_df.loc[:, 'Anticipation.OnsetToOnsetTime'],
+                                  events_df.loc[:, "Feedback.OnsetToOnsetTime"],
+                                  events_df.loc[:, "Probe.OnsetToOnsetTime"],
                                   # convert ms RT times to secs to serve as duration
                                   (events_df[['OverallRT', 'Probe.OnsetTime']].dropna()['OverallRT']) / 1000
                                   ], ignore_index=True)
@@ -221,7 +200,7 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
     design_matrix_mid = make_first_level_design_matrix(
         frame_times=frame_times,
         events=design_events,
-        hrf_model='spm + derivative' if rt_model == 'dairc' else hrf_model,
+        hrf_model='spm + derivative' if rt_model == 'CueYesDeriv' else hrf_model,
         drift_model=None,
         add_regs=conf_regressors
         )
@@ -406,3 +385,63 @@ def make_randomise_grp(comb_nii_path, outdir, permutations=1000):
         f.write(randomise_call)
     # This should change the file permissions to make the script executeable
     randomise_call_file.chmod(randomise_call_file.stat().st_mode | stat.S_IXGRP | stat.S_IEXEC)
+
+
+# USE THE BELOW TO FIX RT times and Feedback onsets if not done already 
+
+def fix_rt(row):
+    """
+    Fixes RT for a given row based on whether RESP is during Probe, TextDislay1 or Feedback
+
+    Args:
+        row (pd.Series): A single row of the DataFrame containing response times 
+                         and onset times for probes and feedback.
+
+    Returns:
+        float or None: The fixed reaction time if certain conditions are met, else returns NA.
+    """    
+    if row['Probe.RESP'] == 1:
+        return row['Probe.RT']
+    elif row['TextDisplay1.RESP'] == 1:
+        result = (row['Probe.OnsetToOnsetTime']*1000) + row['TextDisplay1.RT']
+        return result
+    elif row['Feedback.RESP'] == 1:
+        result = ((row['Probe.OnsetToOnsetTime']*1000) + 
+                  row['Feedback.RT'] + 
+                  (row['TextDisplay1.OnsetToOnsetTime']*1000))
+        return result
+    else:
+        return np.nan
+    
+def fix_feedback_durations(events_file):
+    for i in range(len(events_file)):
+        if i < len(events_file) - 1:  
+            events_file.loc[i, 'Feedback.OnsetToOnsetTime'] = (events_file['Cue.OnsetTime'].loc[i+1] - events_file['Feedback.OnsetTime'].loc[i]).round(3)
+        else:  
+            events_file.loc[i, 'Feedback.OnsetToOnsetTime'] = events_file['FeedbackDuration'].loc[i]
+    
+    return events_file 
+
+
+def process_data(events_data):
+    """
+    First fix Feedback.OnsetProcesses MID ePrime data to fix reactions times for Probe, TextDisplay and Feedback
+
+    Args:
+        file (str): The path to the CSV file containing ePrime data.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the processed data with an added 
+                      'Fixed_RT' column that contains the fixed reaction times.
+
+    """
+
+
+    resp_columns = ['Probe.RESP', 'TextDisplay1.RESP', 'Feedback.RESP']
+    for column in resp_columns:
+        events_data.loc[events_data[column].notnull(), column] = 1
+    
+    # apply fix on each ROW
+    events_data['rt_correct'] = events_data.apply(fix_rt, axis=1)
+    
+    return events_data

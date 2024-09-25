@@ -14,7 +14,7 @@ plt.switch_backend('Agg') # turn off back end display to create plots
 # Getpath to Stage2 scripts
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_dir)
-from scripts.model_designmat_regressors import create_design_mid, pull_regressors, fixed_effect
+from scripts.model_designmat_regressors import create_design_mid, pull_regressors, fixed_effect, process_data
 
 parser = argparse.ArgumentParser(description="Script to run first level task models w/ nilearn")
 
@@ -47,111 +47,86 @@ brainmask = args.mask
 mask_label = args.mask_label
 scratch_out = args.output
 
-contrasts = [
-    # anticipatory contrasts for cue-model
-    'LRew-Neut', 'ARew-Neut', 'LPun-Neut', 'APun-Neut', 'LRew-Base',
-    # feedback contrasts
-    'ARewHit-ARewMiss', 'LRewHit-LRewMiss', 'APunHit-APunMiss',
-    'LPunHit-LPunMiss', 'LRewHit-NeutHit', 'LRewHit-Base',
-    # probe maps
+rename_conds = {
+    'LgReward': 'LargeWin',
+    'SmallReward': 'SmallWin',
+    'LgPun': 'LargeLoss',
+    'SmallPun': 'SmallLoss',
+    'Triangle': 'Neutral'
+}
+
+# GENERAL CONTRASTS FOR PRIMARY MODEL COMPARISONS
+cue_contrasts = [
+    # ANTICIPATORY
+    'Cue:LW-Neut', 'Cue:W-Neut', 'Cue:LL-Neut', 'Cue:L-Neut', 'Cue:LW-Base',
+    # FEEDBACK
+    'FB:WHit-WMiss', 'FB:LWHit-LWMiss', 
+    'FB:LWHit-NeutHit','FB:LWHit-Base',
+    'FB:LHit-LMiss', 'FB:LLHit-LLMiss'
+]
+
+cue_contrasts_labs = {
+    # ANTICIPATORY
+    'Cue:LW-Neut': 'LargeWin - Neutral',
+    'Cue:W-Neut': 'LargeWin + SmallWin - 2*Neutral',
+    'Cue:LL-Neut': 'LargeLoss - Neutral',
+    'Cue:L-Neut': 'LargeLoss + SmallLoss - 2*Neutral',
+    'Cue:LW-Base': 'LargeWin',
+    # FEEDBACK
+    'FB:WHit-WMiss': 'LargeWinHit + SmallWinHit - LargeWinMiss - SmallWinMiss',
+    'FB:LWHit-LWMiss': 'LargeWinHit - LargeWinMiss',
+    'FB:LWHit-NeutHit': 'LargeWinHit - NeutralHit',
+    'FB:LWHit-Base': 'LargeWinHit',
+    'FB:LHit-LMiss': 'LargeLossHit + SmallLossHit - LargeLossMiss - SmallLossMiss',
+    'FB:LLHit-LLMiss': 'LargeLossHit - LargeLossMiss',
+}
+
+# FULL MODELS WITH FIX
+
+full_contrasts = [
+    # CUE ANTICIPATORY
+    'Cue:LW-Neut', 'Cue:W-Neut', 'Cue:LL-Neut', 'Cue:L-Neut', 'Cue:LW-Base',
+    # FIXATION ANTICIPATORY
+    'Fix:LW-Neut', 'Fix:W-Neut', 'Fix:LL-Neut', 'Fix:L-Neut', 'Fix:LW-Base',
+    # FEEDBACK
+    'FB:WHit-WMiss', 'FB:LWHit-LWMiss', 
+    'FB:LWHit-NeutHit','FB:LWHit-Base',
+    'FB:LHit-LMiss', 'FB:LLHit-LLMiss',
+    # PROBE
     'probe-base', 'rt-base'
 ]
 
-fix_contrast = [
-    'LRew-Neut', 'ARew-Neut', 'LRew-Base',
-    'LRew-Neut-fix', 'ARew-Neut-fix', 'LRew-Base-fix',
-    'LRewHit-LRewMiss', 'LRewHit-Base',
-    # probe maps
-    'probe-base', 'rt-base'
-
-]
-
-contrast_probxcond = [
-    # anticipatory contrasts for cue-model
-    'LRew-Neut', 'ARew-Neut', 'LPun-Neut', 'APun-Neut', 'LRew-Base',
-    # feedback contrasts
-    'ARewHit-ARewMiss', 'LRewHit-LRewMiss', 'APunHit-APunMiss',
-    'LPunHit-LPunMiss', 'LRewHit-NeutHit', 'LRewHit-Base',
-    # probe-by-condition
-    'probeLRew-probeNeut', 'probeARew-probeNeut', 'probeLPun-probeNeut', 'probeAPun-probeNeut',
-    'probeARewHit-probeARewMiss', 'probeLRewHit-probeLRewMiss', 'probeAPunHit-probeAPunMiss',
-    'probeLPunHit-probeLPunMiss', 'probeLRewHit-probeNeutHit'
-]
-
-contrast_labs = {
-    # Anticipation
-    'LRew-Neut': 'LgReward - Triangle',
-    'ARew-Neut': 'LgReward + SmallReward - 2*Triangle',
-    'LPun-Neut': 'LgPun - Triangle',
-    'APun-Neut': 'LgPun + SmallPun - 2*Triangle',
-    'LRew-Base': 'LgReward',
-
-    # Feedback
-    'ARewHit-ARewMiss': 'LgReward_hit + SmallReward_hit - LgReward_miss - SmallReward_miss',
-    'LRewHit-LRewMiss': 'LgReward_hit - LgReward_miss',
-    'APunHit-APunMiss': 'LgPun_hit + SmallPun_hit - LgPun_miss - SmallPun_miss',
-    'LPunHit-LPunMiss': 'LgPun_hit - LgPun_miss',
-    'LRewHit-NeutHit': 'LgReward_hit - Triangle_hit',
-    'LRewHit-Base': 'LgReward_hit',
-    # robe
-    'probe-base': 'probe',
-    'rt-base': 'probe_rt'
-}
-
-fix_contrast_labs = {
-    # Ant Cue
-    'LRew-Neut': 'LgReward - Triangle',
-    'ARew-Neut': 'LgReward + SmallReward - 2*Triangle',
-    'LRew-Base': 'LgReward',
-    # Ant Fix
-    'LRew-Neut-fix': 'LgReward_fix - Triangle_fix',
-    'ARew-Neut-fix': 'LgReward_fix + SmallReward_fix - 2*Triangle_fix',
-    'LRew-Base-fix': 'LgReward_fix',
-    # feedback
-    'LRewHit-NeutHit': 'LgReward_hit - Triangle_hit',
-    'LRewHit-Base': 'LgReward_hit',
+full_contrasts_labs = {
+    # CUE ANTICIPATORY
+    'Cue:LW-Neut': 'LargeWin - Neutral',
+    'Cue:W-Neut': 'LargeWin + SmallWin - 2*Neutral',
+    'Cue:LL-Neut': 'LargeLoss - Neutral',
+    'Cue:L-Neut': 'LargeLoss + SmallLoss - 2*Neutral',
+    'Cue:LW-Base': 'LargeWin',
+    # FIXATION ANTICIPATORY
+    'Fix:LW-Neut': 'FixLargeWin - FixNeutral',
+    'Fix:W-Neut': 'FixLargeWin + FixSmallWin - 2*FixNeutral',
+    'Fix:LL-Neut': 'FixLargeLoss - FixNeutral',
+    'Fix:L-Neut': 'FixLargeLoss + FixSmallLoss - 2*FixNeutral',
+    'Fix:LW-Base': 'FixLargeWin',
+    # FEEDBACK
+    'FB:LWHit-NeutHit': 'LargeWinHit - NeutralHit',
+    'FB:LWHit-LWMiss': 'LargeWinHit - LargeWinMiss',
+    'FB:LWHit-Base': 'LargeWinHit',
     # probe maps
     'probe-base': 'probe',
     'rt-base': 'probe_rt'
-
-}
-
-contrast_probxcond_labs = {
-    # Anticipation
-    'LRew-Neut': 'LgReward - Triangle',
-    'ARew-Neut': 'LgReward + SmallReward - 2*Triangle',
-    'LPun-Neut': 'LgPun - Triangle',
-    'APun-Neut': 'LgPun + SmallPun - 2*Triangle',
-    'LRew-Base': 'LgReward',
-    # Feedback
-    'ARewHit-ARewMiss': 'LgReward_hit + SmallReward_hit - LgReward_miss - SmallReward_miss',
-    'LRewHit-LRewMiss': 'LgReward_hit - LgReward_miss',
-    'APunHit-APunMiss': 'LgPun_hit + SmallPun_hit - LgPun_miss - SmallPun_miss',
-    'LPunHit-LPunMiss': 'LgPun_hit - LgPun_miss',
-    'LRewHit-NeutHit': 'LgReward_hit - Triangle_hit',
-    'LRewHit-Base': 'LgReward_hit',
-    # probe-by-condition
-    'probeLRew-probeNeut': 'prbhit_LgReward + prbmiss_LgReward - prbhit_Triangle - prbmiss_Triangle',
-    'probeARew-probeNeut': '.5*prbhit_LgReward + .5*prbmiss_LgReward + .5*prbhit_SmallReward + .5*prbmiss_SmallReward -'
-                           '1*prbhit_Triangle - 1*prbmiss_Triangle',
-    'probeLPun-probeNeut': 'prbhit_LgPun + prbmiss_LgPun - prbhit_Triangle - prbmiss_Triangle',
-    'probeAPun-probeNeut': '.5*prbhit_LgPun + .5*prbmiss_LgPun + .5*prbhit_SmallPun + .5*prbmiss_SmallPun - '
-                           '1*prbhit_Triangle - 1*prbmiss_Triangle',
-    'probeARewHit-probeARewMiss': 'prbhit_LgReward + prbhit_SmallReward - prbmiss_LgReward - prbmiss_SmallReward',
-    'probeLRewHit-probeLRewMiss': 'prbhit_LgReward - prbmiss_LgReward',
-    'probeAPunHit-probeAPunMiss': 'prbhit_LgPun + prbhit_SmallPun - prbmiss_LgPun - prbmiss_SmallPun',
-    'probeLPunHit-probeLPunMiss': 'prbhit_LgPun - prbmiss_LgPun',
-    'probeLRewHit-probeNeutHit': 'prbhit_LgReward - prbhit_Triangle'
 }
 
 fwhm = 5
 runs = ['01', '02']
-model_list = [None, 'rt', 'probexcond', 'rtfull', 'dairc']
+model_list = ['Saturated', 'CueYesDeriv', 'CueNoDeriv']
 for run in runs:
     print(f'\tStarting {subj} {run}.')
-    # import behavior events .tsv from data path
+    # import behavior events .tsv from data path, fix issue with RT column 
     events_df = pd.read_csv(f'{beh_path}/{subj}/ses-{ses}/func/{subj}_ses-{ses}_task-{task}_run-{run}_events.tsv',
                             sep='\t')
+    events_df['Condition'] = events_df['Condition'].replace(rename_conds)
 
     # get path to confounds from fmriprep, func data + mask, set image path
     conf_path = f'{fmriprep_path}/{subj}/ses-{ses}/func/{subj}_ses-{ses}_task-{task}_run-{run}' \
@@ -160,6 +135,7 @@ for run in runs:
         f'{fmriprep_path}/{subj}/ses-{ses}/func/{subj}_ses-{ses}_task-{task}_run-{run}'
         f'_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz')[0]
     print('\t\t 1/3 Create Regressors & Design Matrix for GLM')
+    
     # get list of regressors
     # run to create design matrix
     conf_regressors = pull_regressors(confound_path=conf_path, regressor_type='opt2')
@@ -181,16 +157,12 @@ for run in runs:
         # Run GLM model using set paths and calculate design matrix
         run_fmri_glm = fmri_glm.fit(nii_path, design_matrices=design_matrix)
         print('\t\t 3/3: From GLM model, create/save contrast beta/variance maps to output path')
-        if model in [None, 'dairc']:
-            contrast_list = {key: value for key, value in contrast_labs.items() if key not in ['probe-base', 'rt-base']}
-        elif model == 'rt':
-            contrast_list = contrast_labs
-        elif model == 'rtfull':
-            contrast_list = fix_contrast_labs
-        elif model == 'probexcond':
-            contrast_list = contrast_probxcond_labs
+        if model in ['CueYesDeriv', 'CueNoDeriv']:
+            contrast_list = cue_contrasts_labs
+        elif model == 'Saturated':
+            contrast_list = full_contrasts_labs
         else:
-            print("Model should be RT or None")
+            print("Model Provide is not of CueYesDeriv, CueNoDeriv or Saturated")
 
         for con_name, con in contrast_list.items():
             try:
@@ -208,16 +180,12 @@ for run in runs:
 print("Running Fixed effect model -- precision weight of runs for each contrast")
 
 for model in model_list:
-    if model in [None, 'dairc']:
-        contrast = [contrast for contrast in contrasts if contrast not in ['probe-base', 'rt-base']]
-    elif model == 'rt':
-        contrast = contrasts
-    elif model == 'rtfull':
-        contrast = fix_contrast
-    elif model == 'probexcond':
-        contrast = contrast_probxcond
+    if model in ['CueYesDeriv', 'CueNoDeriv']:
+        contrast = cue_contrasts
+    elif model == 'Saturated':
+        contrast = full_contrasts
     else:
-        print("Model should be RT or None")
+        print("Model Provide is not of CueYesDeriv, CueNoDeriv or Saturated")
 
     fixed_effect(subject=subj, session=ses, task_type=task,
                  contrast_list=contrast, firstlvl_indir=scratch_out, fixedeffect_outdir=scratch_out,
