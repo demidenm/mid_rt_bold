@@ -152,7 +152,7 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
             # CONDITIONS
             conditions = pd.concat([events_df.loc[:, "Condition"],
                                     'Fix' + events_df.loc[:, 'Condition'],
-                                    events_df.loc[:, "Feedback.Response"],
+                                    events_df.loc[:, new_feedback_label],
                                     pd.Series(["probe"] * len(events_df[['rt_correct', 'Probe.OnsetTime']])),
                                     pd.Series(["probe_rt"] * len(events_df[['rt_correct', 'Probe.OnsetTime']].dropna()))
                                     ], ignore_index=True)
