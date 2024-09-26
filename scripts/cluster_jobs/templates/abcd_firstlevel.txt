@@ -29,7 +29,7 @@ fi
 # copy data from beh ouput & s3, ignore unnecessary files
 echo "Copying ${task} files for $sub from beh folder & s3 bucket"
 mkdir -p ${tmp_in}/${sub}/${ses}/func/
-cp ${beh_data}/events_to_tsv/${ses_r}_${task}/${sub}_${ses}_* ${tmp_in}/${sub}/${ses}/func
+cp ${beh_dat}/events_to_tsv/${ses_r}_${task}/${sub}_${ses}_* ${tmp_in}/${sub}/${ses}/func
 cp ${beh_dat}/tsv_to_html/${ses_r}_${task}/${sub}_${ses}_task-${task}_beh-descr.json ${tmp_in}/${sub}/${ses}/func
 
 filenames=$(s3cmd ls ${s3_bucket}/${ses}/${sub}/${ses}/func/ \
