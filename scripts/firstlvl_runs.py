@@ -123,6 +123,7 @@ full_contrasts_labs = {
 fwhm = 5
 runs = ['01', '02']
 model_list = ['Saturated', 'CueYesDeriv', 'CueNoDeriv']
+
 for run in runs:
     print(f'\tStarting {subj} {run}.')
     # import behavior events .tsv from data path, fix issue with RT column & duration onsettoonset issues

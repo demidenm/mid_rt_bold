@@ -229,9 +229,9 @@ def fixed_effect(subject: str, session: str, task_type: str,
         try:
             print(f"\t\t\t Creating weighted fix-eff model for contrast: {contrast}")
             betas = sorted(glob(f'{firstlvl_indir}/{subject}_ses-{session}_task-{task_type}_run-*_'
-                                f'contrast-{contrast}_mod-Cue-{model_lab}_stat-beta.nii.gz'))
-            var = sorted(glob(f'{firstlvl_indir}/{subject}_ses-{session}_task-{task_type}_run-*_'
-                              f'contrast-{contrast}_mod-Cue-{model_lab}_stat-var.nii.gz'))
+                                f'contrast-{contrast}_mod-{model_lab}_stat-beta.nii.gz'))
+            var = sorted(glob(f'{firstlvl_indir}/{subject}_{session}_task-{task_type}_run-*_'
+                              f'contrast-{contrast}_mod-{model_lab}_stat-var.nii.gz'))
 
             # conpute_fixed_effects options
             # (1) contrast map of the effect across runs;
@@ -245,15 +245,15 @@ def fixed_effect(subject: str, session: str, task_type: str,
                 print("Directory created:", fixedeffect_outdir)
             if save_beta:
                 fix_effect_out = f'{fixedeffect_outdir}/{subject}_ses-{session}_task-{task_type}_' \
-                                 f'contrast-{contrast}_mod-Cue-{model_lab}_stat-effect.nii.gz'
+                                 f'contrast-{contrast}_mod-{model_lab}_stat-effect.nii.gz'
                 fix_effect.to_filename(fix_effect_out)
             if save_var:
                 fix_var_out = f'{fixedeffect_outdir}/{subject}_ses-{session}_task-{task_type}_' \
-                              f'contrast-{contrast}_mod-Cue-{model_lab}_stat-var.nii.gz'
+                              f'contrast-{contrast}_mod-{model_lab}_stat-var.nii.gz'
                 fix_var.to_filename(fix_var_out)
             if save_tstat:
                 fix_tstat_out = f'{fixedeffect_outdir}/{subject}_ses-{session}_task-{task_type}_' \
-                                f'contrast-{contrast}_mod-Cue-{model_lab}_stat-tstat.nii.gz'
+                                f'contrast-{contrast}_mod-{model_lab}_stat-tstat.nii.gz'
                 fix_tstat.to_filename(fix_tstat_out)
         except Exception as e:
             print(f'Error processing Fixed Effect: {e} for {subject} and {contrast}')
