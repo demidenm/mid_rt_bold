@@ -146,7 +146,7 @@ for run in runs:
                                           hrf_model='spm', stc=False)
         # save design mat
         plot_design_matrix(design_matrix)
-        plt.savefig(f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_mod-Cue-{model}_design-mat.png')
+        plt.savefig(f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_mod-{model}_design-mat.png')
 
         print('\t\t 2/3 Mask Image, Fit GLM model ar1 autocorrelation')
         # using ar1 autocorrelation (FSL prewhitening), drift model
@@ -166,11 +166,11 @@ for run in runs:
 
         for con_name, con in contrast_list.items():
             try:
-                beta_name = f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_contrast-{con_name}_mod-Cue-{model}_stat-beta.nii.gz'
+                beta_name = f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_contrast-{con_name}_mod-{model}_stat-beta.nii.gz'
                 beta_est = run_fmri_glm.compute_contrast(con, output_type='effect_size')
                 beta_est.to_filename(beta_name)
                 # Calc: variance
-                var_name = f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_contrast-{con_name}_mod-Cue-{model}_stat-var.nii.gz'
+                var_name = f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_contrast-{con_name}_mod-{model}_stat-var.nii.gz'
                 var_est = run_fmri_glm.compute_contrast(con, output_type='effect_variance')
                 var_est.to_filename(var_name)
             except Exception as e:

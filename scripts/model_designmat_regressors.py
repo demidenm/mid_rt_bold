@@ -144,13 +144,6 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
                                       'onset': onsets,
                                       'duration': durations})
 
-        # create pandas df with events
-        design_events = pd.DataFrame({
-            'trial_type': conditions,
-            'onset': onsets,
-            'duration': duration
-        })
-
     if rt_model == 'Saturated':
         try:
             # concat  cue onset/duration + feedback onset/duration + probe regressors
@@ -158,8 +151,8 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
             conditions = pd.concat([events_df.loc[:, "Condition"],
                                     'Fix' + events_df.loc[:, 'Condition'],
                                     events_df.loc[:, "Feedback.Response"],
-                                    pd.Series(["probe"] * len(events_df[['OverallRT', 'Probe.OnsetTime']])),
-                                    pd.Series(["probe_rt"] * len(events_df[['OverallRT', 'Probe.OnsetTime']].dropna()))
+                                    pd.Series(["probe"] * len(events_df[['rt_correct', 'Probe.OnsetTime']])),
+                                    pd.Series(["probe_rt"] * len(events_df[['rt_correct', 'Probe.OnsetTime']].dropna()))
                                     ], ignore_index=True)
             
             # ONSETS
@@ -167,22 +160,22 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
                                 events_df.loc[:, 'Anticipation.OnsetTime'],
                                 events_df.loc[:, "Feedback.OnsetTime"],
                                 events_df.loc[:, "Probe.OnsetTime"],
-                                events_df[['OverallRT', 'Probe.OnsetTime']].dropna()['Probe.OnsetTime']
+                                events_df[['rt_correct', 'Probe.OnsetTime']].dropna()['Probe.OnsetTime']
                                 ], ignore_index=True)
             # DURATIONS
-            duration = pd.concat([events_df.loc[:, 'Cue.OnsetToOnsetTime'],
+            durations = pd.concat([events_df.loc[:, 'Cue.OnsetToOnsetTime'],
                                   events_df.loc[:, 'Anticipation.OnsetToOnsetTime'],
                                   events_df.loc[:, "Feedback.OnsetToOnsetTime"],
                                   events_df.loc[:, "Probe.OnsetToOnsetTime"],
                                   # convert ms RT times to secs to serve as duration
-                                  (events_df[['OverallRT', 'Probe.OnsetTime']].dropna()['OverallRT']) / 1000
+                                  (events_df[['rt_correct', 'Probe.OnsetTime']].dropna()['rt_correct']) / 1000
                                   ], ignore_index=True)
 
             # create pandas df with events
             design_events = pd.DataFrame({
                 'trial_type': conditions,
                 'onset': onsets,
-                'duration': duration
+                'duration': durations
             })
         except Exception as e:
             print("When creating RT design matrix, an error occurred: ", e)
