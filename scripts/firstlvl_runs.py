@@ -93,7 +93,7 @@ full_contrasts = [
     # FEEDBACK
     'FB:WHit-WMiss', 'FB:LWHit-LWMiss', 
     'FB:LWHit-NeutHit','FB:LWHit-Base',
-    'FB:LHit-LMiss', 'FB:LLHit-LLMiss'
+    'FB:LHit-LMiss', 'FB:LLHit-LLMiss',
     # PROBE
     'Probe', 'RT'
 ]
