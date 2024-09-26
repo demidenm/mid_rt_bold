@@ -230,7 +230,7 @@ def fixed_effect(subject: str, session: str, task_type: str,
             print(f"\t\t\t Creating weighted fix-eff model for contrast: {contrast}")
             betas = sorted(glob(f'{firstlvl_indir}/{subject}_ses-{session}_task-{task_type}_run-*_'
                                 f'contrast-{contrast}_mod-{model_lab}_stat-beta.nii.gz'))
-            var = sorted(glob(f'{firstlvl_indir}/{subject}_{session}_task-{task_type}_run-*_'
+            var = sorted(glob(f'{firstlvl_indir}/{subject}_ses-{session}_task-{task_type}_run-*_'
                               f'contrast-{contrast}_mod-{model_lab}_stat-var.nii.gz'))
 
             # conpute_fixed_effects options
