@@ -14,7 +14,9 @@ plt.switch_backend('Agg') # turn off back end display to create plots
 # Getpath to Stage2 scripts
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_dir)
-from scripts.model_designmat_regressors import create_design_mid, pull_regressors, fixed_effect, process_data
+from scripts.model_designmat_regressors import (
+    create_design_mid, pull_regressors, fixed_effect, 
+    process_data, fix_feedback_durations)
 
 parser = argparse.ArgumentParser(description="Script to run first level task models w/ nilearn")
 
@@ -93,7 +95,7 @@ full_contrasts = [
     'FB:LWHit-NeutHit','FB:LWHit-Base',
     'FB:LHit-LMiss', 'FB:LLHit-LLMiss',
     # PROBE
-    'probe-base', 'rt-base'
+    'Probe', 'RT'
 ]
 
 full_contrasts_labs = {
@@ -114,8 +116,8 @@ full_contrasts_labs = {
     'FB:LWHit-LWMiss': 'LargeWinHit - LargeWinMiss',
     'FB:LWHit-Base': 'LargeWinHit',
     # probe maps
-    'probe-base': 'probe',
-    'rt-base': 'probe_rt'
+    'Probe': 'probe',
+    'RT': 'probe_rt'
 }
 
 fwhm = 5
@@ -123,10 +125,14 @@ runs = ['01', '02']
 model_list = ['Saturated', 'CueYesDeriv', 'CueNoDeriv']
 for run in runs:
     print(f'\tStarting {subj} {run}.')
-    # import behavior events .tsv from data path, fix issue with RT column 
-    events_df = pd.read_csv(f'{beh_path}/{subj}/ses-{ses}/func/{subj}_ses-{ses}_task-{task}_run-{run}_events.tsv',
+    # import behavior events .tsv from data path, fix issue with RT column & duration onsettoonset issues
+    eventsdat = pd.read_csv(f'{beh_path}/{subj}/ses-{ses}/func/{subj}_ses-{ses}_task-{task}_run-{run}_events.tsv',
                             sep='\t')
-    events_df['Condition'] = events_df['Condition'].replace(rename_conds)
+    eventsdat = fix_feedback_durations(eventsdat)
+    eventsdat['Condition'] = eventsdat['Condition'].replace(rename_conds)
+    events_df = process_data(eventsdat)
+    events_df.to_csv(f'{scratch_out}/{subj}_ses-{ses}_task-{task}_run-{run}_events.tsv',
+                     sep='\t', index=False)
 
     # get path to confounds from fmriprep, func data + mask, set image path
     conf_path = f'{fmriprep_path}/{subj}/ses-{ses}/func/{subj}_ses-{ses}_task-{task}_run-{run}' \
@@ -162,7 +168,7 @@ for run in runs:
         elif model == 'Saturated':
             contrast_list = full_contrasts_labs
         else:
-            print("Model Provide is not of CueYesDeriv, CueNoDeriv or Saturated")
+            print("Model provided is not of CueYesDeriv, CueNoDeriv or Saturated")
 
         for con_name, con in contrast_list.items():
             try:

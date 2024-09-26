@@ -78,6 +78,8 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
     """
     Creates a design matrix for each run with 5 anticipation 10 feedback conditions and
     specified regressors, such as cosine, motion and/or acompcor from fmriprep confounds.tsv
+    Refactored to use OnsetToOnsetTime Durations given e-prime issues w/ Duration column as target: 
+    https://support.pstnet.com/hc/en-us/articles/115000902428-TIMING-Timing-of-E-Objects-22852
 
     :param events_df: this is the pandas dataframe for the events for the MID task
     :param bold_tr: TR for the BOLD volume,
@@ -391,7 +393,7 @@ def fix_rt(row):
                          and onset times for probes and feedback.
 
     Returns:
-        float or None: The fixed reaction time if certain conditions are met, else returns NA.
+        float or None: The fixed reaction time if certain conditions are met.
     """    
     if row['Probe.RESP'] == 1:
         return row['Probe.RT']
@@ -407,6 +409,18 @@ def fix_rt(row):
         return np.nan
     
 def fix_feedback_durations(events_file):
+    """
+    For each event, this function calculates the time between the onset of feedback (t) and the next cue (t+1).
+    If the event is the last one, it assigns the value from 'FeedbackDuration' instead.
+    The idea is that unless programmed, e-prime holds the feedback stimulus on the screen until the next trial starts
+
+    Args:
+        events_file (pd.DataFrame): DataFrame containing event data, including 'Cue.OnsetTime', 
+                                    'Feedback.OnsetTime', and 'FeedbackDuration' columns.
+
+    Returns:
+        pd.DataFrame: Updated DataFrame with 'Feedback.OnsetToOnsetTime' column adjusted.
+    """
     for i in range(len(events_file)):
         if i < len(events_file) - 1:  
             events_file.loc[i, 'Feedback.OnsetToOnsetTime'] = (events_file['Cue.OnsetTime'].loc[i+1] - events_file['Feedback.OnsetTime'].loc[i]).round(3)
@@ -425,7 +439,7 @@ def process_data(events_data):
 
     Returns:
         pd.DataFrame: A DataFrame containing the processed data with an added 
-                      'Fixed_RT' column that contains the fixed reaction times.
+                      'rt_correct' column that contains the fixed reaction times.
 
     """
 
