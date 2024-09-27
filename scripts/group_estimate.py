@@ -43,14 +43,18 @@ def group_onesample(fixedeffect_paths: list, session: str, task_type: str,
     n_maps = len(fixedeffect_paths)
     # Create design matrix with intercept (1s) that's length of subjects/length of fixed_files
     design_matrix = pd.DataFrame([1] * n_maps, columns=['int'])
-    design_matrix['rt'] = rt_array
+    if rt_array:
+        design_matrix['rt'] = rt_array
+        con_array = ['int','rt']
+    else:
+        con_array = ['int']
 
     # Fit secondlevel model
     sec_lvl_model = SecondLevelModel(mask_img=mask, smoothing_fwhm=None, minimize_memory=False)
     sec_lvl_model = sec_lvl_model.fit(second_level_input=fixedeffect_paths,
                                       design_matrix=design_matrix)
     # contrasts mean 'int' and corr with mRT 'rt
-    for con in ['int', 'rt']:
+    for con in con_array:
         tstat_map = sec_lvl_model.compute_contrast(
             second_level_contrast=con,
             second_level_stat_type='t',
@@ -113,16 +117,16 @@ sub_ids = [os.path.basename(path).split('_')[0] for path in list_maps]
 subset_df = sub_rt_df[sub_rt_df['Subject'].isin(sub_ids)].copy()
 subset_df = subset_df.set_index('Subject').loc[sub_ids].reset_index()  # ensure index sorts same as IDs
 assert (subset_df['Subject'].values ==
-        np.array(sub_ids)).all(), "Order of IDs in subset_df != sub_ids."
+       np.array(sub_ids)).all(), "Order of IDs in subset_df != sub_ids."
 
 mean_rt = subset_df['Average_RT'].mean()
 subset_df['Mean_Centered_RT'] = (subset_df['Average_RT'] - mean_rt).values
 rt_vals = subset_df['Mean_Centered_RT'].values
 
-# standard group maps with nilearn
+
 group_onesample(fixedeffect_paths=list_maps, session=ses, task_type=task,
                 contrast_type=contrast, group_outdir=scratch_out,
-                model_lab=model, mask=brainmask, rt_array=rt_vals)
+                model_lab=model, mask=brainmask, rt_array=None)
 
 if run_randomise is True:
     # randomise, permuted maps + corrected
@@ -133,7 +137,7 @@ if run_randomise is True:
     num_maps = len(list_maps)
     comb_input_nii = f'{tmp_rand}/concat_imgs/subs-500_ses-{ses}_task-MID_contrast-{contrast}_{model}.nii'
 
-    for level in ['grp', 'rt']:
+    for level in ['grp','int']:
         if level == 'grp':
             # Create design matrix with intercept (1s) that's length of subjects/length of fixed_files
             design_matrix = pd.DataFrame({'int': [1] * num_maps})
