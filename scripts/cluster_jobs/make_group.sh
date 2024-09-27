@@ -26,7 +26,7 @@ if [ -z "$1" ]; then
 fi
 
 n=${counter_start}
-for model in ${rt_mods[@]} ; do
+for model in ${mods[@]} ; do
   if [ "$model" == 'mod-Saturated' ] ; then
     for con in ${sat_cons[@]} ; do
       sed -e "s|MODEL|${model}|g; \
