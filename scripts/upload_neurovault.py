@@ -5,7 +5,7 @@ from pynv import Client
 parser = argparse.ArgumentParser(description="Script to upload image maps to NeuroVault")
 
 parser.add_argument("--token", help="File with NeuroVault Token Information")
-parser.add_argument("--sample", help="Name of sample, AHRB, ABCD or MLS")
+parser.add_argument("--sample", help="Name of sample, AHRB or ABCD")
 parser.add_argument("--group_files", help="list of image paths to group files")
 
 args = parser.parse_args()
