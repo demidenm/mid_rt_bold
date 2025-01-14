@@ -10,3 +10,4 @@ scripts/cluster_jobs/*.batch
 scripts/.ipynb_checkpoints/rt_mid_firstlvl-checkpoint.ipynb
 scripts/cluster_jobs/upload_neurovault/
 .DS_Store
+scripts/notebook_mid-rt_results_old.ipynb
