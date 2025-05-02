@@ -11,6 +11,7 @@ b_mod=BMOD
 contrast=CONTRAST
 sub_list=SUBJ_IDS
 rt_file=/scratch.global/mdemiden/mid_rt_mod/subs_avg-overall-rts.csv
+site_file=/scratch.global/mdemiden/mid_rt_mod/site_ids.csv
 mask=${curr_dir}/../brain_mask/MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz
 fixed_in=INPUT
 group_dir=OUTPUT
@@ -27,9 +28,12 @@ cat ${sub_list} | while read line ; do
 	sub=$(echo $line | awk -F" " '{ print $1 }' )
 	echo "sub: ${sub} and line ${line}"
 	if [ ${type} == 'session' ]; then
-		cp -r ${fixed_in}/ses-${ses}/${sub}/${sub}_ses-${ses}_task-${task}_*_stat-effect.nii.gz ${tmp_dir}/inp/
+		cp -r ${fixed_in}/ses-${ses}/${sub}/${sub}_ses-${ses}_task-${task}_contrast-${contrast}_*_stat-effect.nii.gz ${tmp_dir}/inp/
+		cp -r ${fixed_in}/ses-${ses}/${sub}/${sub}_ses-${ses}_task-${task}_contrast-${contrast}_*_stat-var.nii.gz ${tmp_dir}/inp/
 	elif [ ${type} == 'run' ]; then
-		cp -r ${fixed_in}/ses-${ses}/${sub}/${sub}_ses-${ses}_task-${task}_run-0${run}*_stat-beta.nii.gz ${tmp_dir}/inp/
+		cp -r ${fixed_in}/ses-${ses}/${sub}/${sub}_ses-${ses}_task-${task}_contrast-${contrast}_run-0${run}*_stat-beta.nii.gz ${tmp_dir}/inp/
+		cp -r ${fixed_in}/ses-${ses}/${sub}/${sub}_ses-${ses}_task-${task}_contrast-${contrast}_run-0${run}*_stat-var.nii.gz ${tmp_dir}/inp/
+
 	else
 		echo "Invalid type: $type"
 	fi
@@ -49,6 +53,7 @@ python ${script_dir}/group_diff.py \
 		--run ${run} \
 		--ses ${ses} \
 		--mask ${mask} \
+		--site_file ${site_file} \
 		--a_mod ${a_mod} \
 		--b_mod ${b_mod} \
 		--contrast ${contrast} \
@@ -66,3 +71,15 @@ fi
 
 echo "Syncing files from scratch to analysis path. Deleted from scratch once sync'd" 
 rsync -av --remove-source-files ${group_scratch}/ ${group_out}/
+
+# since recomputed z-stat for each subject, sync back to folder
+cat ${sub_list} | while read line ; do 
+	sub=$(echo $line | awk -F" " '{ print $1 }' )
+	if [ ${type} == 'session' ]; then
+		rsync -av --remove-source-files ${tmp_dir}/inp/${sub}_ses-${ses}_task-${task}_contrast-${contrast}_*_stat-zstat.nii.gz  ${fixed_in}/ses-${ses}/${sub}/
+		echo "sub: ${sub} z-stat sync'd to ${fixed_in}/ses-${ses}/${sub}/"
+
+	else
+		echo "Nothing sync'd"
+	fi
+done

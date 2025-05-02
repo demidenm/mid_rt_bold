@@ -1,5 +1,6 @@
 import os
 import stat
+import itertools
 import pandas as pd
 import numpy as np
 import nibabel as nib
@@ -7,7 +8,13 @@ from pathlib import Path
 from nilearn.glm.contrasts import expression_to_contrast_vector
 from nilearn.glm.first_level import make_first_level_design_matrix
 from nilearn.glm import compute_fixed_effects
+from nilearn import masking
+from scipy import ndimage
 from glob import glob
+import multiprocessing as mp
+import os
+from functools import partial
+from tqdm import tqdm
 
 
 def pull_regressors(confound_path: str, regressor_type: str = 'opt1') -> pd.DataFrame:
@@ -275,7 +282,7 @@ def make_4d_data_mask(bold_paths, sess, contrast_lab, model_type, tmp_dir):
     masked_4d.to_filename(f'{filename_root}_mask.nii.gz')
 
 
-def make_randomise_files(desmat_final, regressor_names, contrasts, outdir):
+def make_randomise_files(desmat_final, site_array, regressor_names, contrasts, outdir):
     """
     desmat_final: numpy array of the design matrix
     regressor_names: The regressor names that correspond to the columns of desmat_final
@@ -297,12 +304,14 @@ def make_randomise_files(desmat_final, regressor_names, contrasts, outdir):
         f.write(f'/NumWaves	{num_regressors} \n/NumPoints {num_input_contrasts} '
                 '\n/PPheights 1.000000e+00 \n \n/Matrix \n')
         np.savetxt(f, desmat_final, delimiter='\t')
+
     # .grp file (required for f-tests)
     grp_path = f'{outdir}/desmat.grp'
     with open(grp_path, 'w') as f:
-        f.write(f'/NumWaves  1 \n/NumPoints {num_input_contrasts}\n \n/Matrix \n')
-        np.savetxt(f, np.ones(num_input_contrasts), fmt='%s', delimiter='\t')
-        # save out contrasts in .con file
+        f.write(f'/NumWaves  1 \n/NumPoints {len(site_array)}\n \n/Matrix \n')
+        np.savetxt(f, site_array, fmt='%s', delimiter='\t')
+    
+    # save out contrasts in .con file  
     contrast_matrix = []
     num_contrasts = len(contrasts)
     for contrast in contrasts:
@@ -339,7 +348,7 @@ def make_randomise_rt(comb_nii_path, outdir, permutations=1000):
     if not os.path.exists(f'{outdir}'):
         os.makedirs(f'{outdir}')
 
-    randomise_call = (f'randomise_parallel -i {inp_dir}/{file_name}'
+    randomise_call = (f'randomise -i {inp_dir}/{file_name}'
                       f' -o {outdir}/{file_noext}_randomise'
                       f' -m {inp_dir}/{file_noext}_mask.nii.gz'
                       f' -d {outdir}/desmat.mat -t {outdir}/desmat.con'
@@ -369,11 +378,12 @@ def make_randomise_grp(comb_nii_path, outdir, permutations=1000):
     inp_dir, file_name = os.path.split(comb_nii_path)
     file_noext, _ = os.path.splitext(file_name)
 
-    randomise_call = (f'randomise_parallel -i {inp_dir}/{file_name}'
-                      f' -o {outdir}/{file_noext}_randomise'
-                      f' -m {inp_dir}/{file_noext}_mask.nii.gz'
-                      f' -1 -t {outdir}/desmat.con'
-                      f' -f {outdir}/desmat.fts  -T -n {permutations}')
+    randomise_call = (f'randomise -i {inp_dir}/{file_name}'
+                    f' -o {outdir}/{file_noext}_randomise'
+                    f' -m {inp_dir}/{file_noext}_mask.nii.gz'
+                    f' -1 -t {outdir}/desmat.con'
+                    f' -f {outdir}/desmat.fts  -T -n {permutations} -P'
+                    )
 
     randomise_call_file = Path(f'{outdir}/randomise_call.sh')
     with open(randomise_call_file, 'w') as f:
@@ -452,3 +462,280 @@ def process_data(events_data):
     events_data['rt_correct'] = events_data.apply(fix_rt, axis=1)
     
     return events_data
+
+
+def generate_permutation_matrix(scanner_ids):
+    """
+    [code provide by Jeanette Mumford]
+    Generate a permutation matrix where each row represents a different
+    permutation of sign flips for all subjects, respecting scanner grouping.
+
+    Parameters:
+    - scanner_ids: Array of length 500 containing scanner IDs (1-14) for each subject
+    - n_scanners: Number of unique scanners (default=14)
+
+    Returns:
+    - permutation_matrix: Array of shape (2^n_scanners, len(scanner_ids))
+                         with all possible sign permutations
+    """
+    # Number of subjects
+    n_subjects = len(scanner_ids)
+    n_scanners = len(np.unique(scanner_ids))  # Should be 14
+
+    # Generate all possible binary combinations for scanners
+    binary_patterns = list(itertools.product([0, 1], repeat=n_scanners))
+    n_permutations = len(binary_patterns)  # Should be 2^n_scanners = 16,384
+
+    # Convert to -1/+1 patterns
+    scanner_permutations = np.array(binary_patterns) * 2 - 1  # Shape: (16384, 14)
+
+    # Initialize the full permutation matrix
+    permutation_matrix = np.ones((n_permutations, n_subjects))
+
+    # For each scanner ID (1 to 14)
+    for scanner in range(1, n_scanners + 1):
+        # Find which subjects came from this scanner
+        scanner_mask = scanner_ids == scanner
+
+        # For all permutations, set the sign for these subjects
+        # Note: scanner_permutations[:, scanner-1] is shape (16384,)
+        # We use broadcasting to apply it to all matching subjects
+        permutation_matrix[:, scanner_mask] = np.outer(
+            scanner_permutations[:, scanner - 1], np.ones(np.sum(scanner_mask))
+        )
+
+    return permutation_matrix
+
+
+def significant_cluster_mask(cluster_map_obs, max_cluster_threshold):
+    """
+    [code provide by Jeanette Mumford]
+
+    Create a binary mask indicating clusters larger than the threshold.
+
+    Parameters:
+    -----------
+    cluster_map_obs : ndarray
+        3D array of cluster IDs (integers)
+    max_cluster_threshold : int
+        Minimum size threshold for clusters to include
+
+    Returns:
+    --------
+    ndarray
+        Binary mask where 1 indicates voxels in clusters larger than threshold
+    """
+    # Count the size of each cluster
+    unique_labels, counts = np.unique(cluster_map_obs, return_counts=True)
+
+    # Find which labels (excluding 0) exceed the threshold
+    large_cluster_labels = unique_labels[(unique_labels != 0) & (counts > max_cluster_threshold)]
+
+    # Create binary mask of large clusters
+    large_clusters_mask = np.isin(cluster_map_obs, large_cluster_labels)
+
+    return large_clusters_mask
+
+
+def get_cluster_2sided(t_stats, mask_3d, cluster_forming_threshold=3.1):
+    # Create 3D map for t-statistics
+    obs_t_map_3d = np.zeros(mask_3d.shape)
+    obs_t_map_3d[mask_3d] = t_stats
+
+    # Find observed clusters (pos and neg)
+    pos_thresholded_obs_map = obs_t_map_3d > cluster_forming_threshold
+    # Define array for 6-connectivity, aka NN1 or "faces"
+    bin_struct = ndimage.generate_binary_structure(rank=3, connectivity=1)
+    pos_labeled_obs_array, num_pos_features = ndimage.label(
+        pos_thresholded_obs_map, bin_struct
+    )
+
+    neg_thresholded_obs_map = obs_t_map_3d < -cluster_forming_threshold
+    neg_labeled_obs_array, num_neg_features = ndimage.label(
+        neg_thresholded_obs_map, bin_struct
+    )
+    # shift negative labels that are nonzero to avoid overlap with positive labels
+    neg_labeled_obs_array[neg_labeled_obs_array > 0] += num_pos_features
+
+    # Combine positive and negative clusters
+    cluster_map = pos_labeled_obs_array + neg_labeled_obs_array
+    neg_pos_arrays = {
+        'pos_labeled_obs_array': pos_labeled_obs_array,
+        'neg_labeled_obs_array': neg_labeled_obs_array,
+    }
+    return cluster_map, neg_pos_arrays
+
+
+def find_largest_cluster_size(labeled_array):
+    """
+    [code provide by Jeanette Mumford]
+    Find the size of the largest cluster in a labeled array.
+    Parameters:
+    - labeled_array: 3D numpy array with labeled clusters
+    Returns:
+    - largest_cluster_size: Size of the largest cluster (excluding background)
+    """
+    # Get unique labels and their counts
+    unique_labels, counts = np.unique(labeled_array, return_counts=True)
+    largest_cluster_size = (
+        np.max(counts[1:]) if len(counts) > 1 else 0
+    )  # skips the background label (0)
+    return largest_cluster_size
+
+
+def process_permutation(p, data, perm_matrix, mask_3d, n_subjects, cluster_forming_threshold):
+    """Process a single permutation for cluster analysis.
+    
+    This function must be defined at module level (not inside another function)
+    to be picklable for multiprocessing.
+    """
+    print(f'Processing permutation: {p}')
+    # Apply sign flipping
+    permuted_data = data * perm_matrix[p, :, np.newaxis]
+
+    # Calculate t-statistics
+    perm_mean = np.mean(permuted_data, axis=0)
+    perm_std = np.std(permuted_data, axis=0, ddof=1)
+    perm_t_stats = perm_mean / (perm_std / np.sqrt(n_subjects))
+
+    # Get maximum absolute t-statistic
+    max_t = np.max(np.abs(perm_t_stats))
+
+    # Get clusters
+    two_sided_clusters_perm, _ = get_cluster_2sided(
+        perm_t_stats, mask_3d, cluster_forming_threshold=cluster_forming_threshold
+    )
+    # Get largest cluster size
+    max_cluster_size = find_largest_cluster_size(two_sided_clusters_perm)
+    
+    return max_t, max_cluster_size
+
+
+def permutation_test_with_clustering(
+    data_path,
+    mask_path,
+    scanner_ids,
+    cluster_forming_threshold=3.1,
+    n_permutations=None,
+    n_cpus=6,  # New parameter to control CPU usage 
+):
+    """
+    [code provide by Jeanette Mumford; modified for parallelization]
+    Sign-flipping permutation test with cluster-based thresholding for 4D NIfTI data
+    With parallel processing support using a specified fraction of available CPUs
+
+    Parameters:
+    -----------
+    data_path : str
+        Path to 4D NIfTI file with subject data
+    mask_path : str
+        Path to brain mask NIfTI file
+    scanner_ids : array-like
+        Scanner IDs for each subject to inform permutation structure
+    cluster_forming_threshold : float
+        Threshold for forming clusters (default: 3.1)
+    n_permutations : int, optional
+        Number of permutations to run
+    n_cpus : float, optional
+        Fraction of available CPUs to use 
+
+    Returns:
+    --------
+    dict : Dictionary containing p-values, t-statistics, and cluster information
+    """
+    
+    # CPUs to use 
+    print(f"Using {n_cpus} CPUs for parallel processing.")
+
+    # Load the 4D NIfTI data and apply mask
+    nifti_img = nib.load(data_path)
+    mask_img = nib.load(mask_path)
+
+    # Apply the mask to extract voxel data
+    data = masking.apply_mask(nifti_img, mask_img)
+
+    # Get dimensions
+    n_subjects, n_voxels = data.shape
+
+    # Calculate observed t-statistics
+    mean_data = np.mean(data, axis=0)
+    std_data = np.std(data, axis=0, ddof=1)
+    t_stats = mean_data / (std_data / np.sqrt(n_subjects))
+
+    # Generate permutation matrix
+    perm_matrix = generate_permutation_matrix(scanner_ids)
+    print(f'There are {perm_matrix.shape[0]} possible permutations.')
+    if n_permutations is not None and n_permutations < perm_matrix.shape[0]:
+        idx = np.random.choice(perm_matrix.shape[0], n_permutations, replace=False)
+        perm_matrix = perm_matrix[idx]
+
+    n_perms = perm_matrix.shape[0]
+
+    # Get the original 3D shape from the mask
+    mask_3d = mask_img.get_fdata().astype(bool)
+    orig_shape = mask_3d.shape
+    print(f"Mask shape: {orig_shape}")
+
+    # Prepare for parallel processing
+    process_func = partial(
+        process_permutation,
+        data=data,
+        perm_matrix=perm_matrix,
+        mask_3d=mask_3d,
+        n_subjects=n_subjects,
+        cluster_forming_threshold=cluster_forming_threshold
+    )
+    
+    # Run permutations in parallel with progress tracking
+    print(f"Starting parallel permutation processing with {n_cpus} processes...")
+    
+    # Using tqdm for progress bar
+    with mp.Pool(processes=n_cpus) as pool:
+        # imap returns results as they become available, allowing for progress tracking
+        results = list(tqdm(
+            pool.imap(process_func, range(n_perms)),
+            total=n_perms,
+            desc="Permutations"
+        ))
+    
+    print("Completed all permutations!")
+    
+    # Unpack results
+    perm_max_t = np.array([r[0] for r in results])
+    perm_max_cluster_size = np.array([r[1] for r in results])
+
+    # Max cluster size threshold
+    max_cluster_size_threshold = np.percentile(
+        perm_max_cluster_size, 95
+    )  # 95th percentile of permuted cluster sizes
+    print(f"95th percentile cluster size threshold: {max_cluster_size_threshold}")
+
+    # Create 3D map of observed t-statistics
+    print("Creating 3D maps of results...")
+    obs_t_map_3d = np.zeros(orig_shape)
+    obs_t_map_3d[mask_3d] = t_stats
+
+    # cluster map for observed data
+    cluster_map_obs, neg_pos_arrays = get_cluster_2sided(
+        t_stats, mask_3d, cluster_forming_threshold=cluster_forming_threshold
+    )
+
+    sig_clusters = significant_cluster_mask(cluster_map_obs, max_cluster_size_threshold)
+
+    # Create a t-statistic image
+    t_stat_img = nib.Nifti1Image(obs_t_map_3d, mask_img.affine)
+
+    # Create a cluster label image
+    sig_cluster_mask_img = nib.Nifti1Image(
+        sig_clusters.astype(np.int8), mask_img.affine
+    )
+    # sig_cluster_mask_img = nib.Nifti1Image(sig_clusters, mask_img.affine)
+
+    print("Permutation test completed successfully!")
+    
+    return {
+        'perm-tstat': t_stat_img,
+        'perm-sigclustermask': sig_cluster_mask_img,
+        'maxclustersizethreshold': max_cluster_size_threshold,
+        'negposarrays': neg_pos_arrays,
+    }

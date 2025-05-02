@@ -3,15 +3,16 @@
 curr_dir=`pwd`
 sample=abcd 
 task=MID
+# 2YearFollowUpYArm1
 ses=2YearFollowUpYArm1
 type=session # run or session
 run=1
 subj_list=${1}
 inpfold=/scratch.global/${USER}/mid_rt_mod/firstlvl
 outfold=/scratch.global/${USER}/mid_rt_mod/group
-counter_start=0
-run_randomise=True  # True or False
-mods=('mod-Saturated' 'mod-CueYesDeriv' 'mod-CueNoDeriv')
+counter_start=20
+run_randomise=custom  # randomise or custom --> custom site cluster correction (randomise doesnt handled imbalanced site Ns)
+mods=('mod-Saturated' 'mod-CueYesDeriv')
 sat_cons=('Cue:LW-Neut Cue:W-Neut Cue:LL-Neut Cue:L-Neut Cue:LW-Base Fix:LW-Neut Fix:W-Neut Fix:LL-Neut Fix:L-Neut Fix:LW-Base FB:WHit-WMiss FB:LWHit-LWMiss FB:LWHit-NeutHit FB:LWHit-Base FB:LHit-LMiss FB:LLHit-LLMiss Probe RT')
 cue_cons=('Cue:LW-Neut Cue:W-Neut Cue:LL-Neut Cue:L-Neut Cue:LW-Base FB:WHit-WMiss FB:LWHit-LWMiss FB:LWHit-NeutHit FB:LWHit-Base FB:LHit-LMiss FB:LLHit-LLMiss')
 #rtmod_contrasts=('LRew-Neut' 'ARew-Neut' 'LPun-Neut' 'APun-Neut' 'ARewHit-ARewMiss' 'LRewHit-LRewMiss' 'APunHit-APunMiss' 'LPunHit-LPunMiss' 'LRewHit-NeutHit' 'probe-base' 'rt-base' 'LRew-Base' 'LRewHit-Base')
