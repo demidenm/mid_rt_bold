@@ -25,7 +25,7 @@ with open(nv_token, 'r') as file:
     token_info = file.read()
 
 api = Client(token_info.strip())
-collection_name = api.create_collection(f'{sample}: Randomise MNI152 3D maps for MID RT Models')
+collection_name = api.create_collection(f'{sample}: MNI152 3D maps for MID RT Models')
 
 # add group images
 with open(grp_paths, 'r') as file:
@@ -39,8 +39,6 @@ with open(grp_paths, 'r') as file:
             est = 'f_stat'
         elif 'cohensd' in map_type:
             est = 'cohens_d'
-        elif 'pearsonr' in map_type:
-            est = 'pearsons_r'
 
         img_basename = os.path.basename(clean_path)
         file_details = img_basename.split('_')

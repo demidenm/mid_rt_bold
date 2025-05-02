@@ -199,4 +199,4 @@ for model in model_list:
 
     fixed_effect(subject=subj, session=ses, task_type=task,
                  contrast_list=contrast, firstlvl_indir=scratch_out, fixedeffect_outdir=scratch_out,
-                 model_lab=model, save_beta=True, save_var=True, save_tstat=False)
+                 model_lab=model, save_beta=True, save_var=True, save_tstat=True)
