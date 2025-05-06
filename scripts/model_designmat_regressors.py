@@ -109,6 +109,17 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
                                        'prbhit_' + events_df['Condition'],
                                        'prbmiss_' + events_df['Condition'])
 
+    probe_remap = {
+        'SmallLoss': 'probe_lose',
+        'LargeLoss': 'probe_lose',
+        'SmallWin': 'probe_win',
+        'LargeWin': 'probe_win',
+        'Neutral': 'probe_neut'
+    }
+    
+    events_df['Probe.Cue'] = events_df['Condition'].map(probe_remap)
+
+
     if rt_model is None:
         # CONDITIONS
         conditions = pd.concat([events_df.loc[:, "Condition"], events_df.loc[:, new_feedback_label]],
@@ -160,7 +171,8 @@ def create_design_mid(events_df: pd.DataFrame, bold_tr: float, num_volumes: int,
             conditions = pd.concat([events_df.loc[:, "Condition"],
                                     'Fix' + events_df.loc[:, 'Condition'],
                                     events_df.loc[:, new_feedback_label],
-                                    pd.Series(["probe"] * len(events_df[['rt_correct', 'Probe.OnsetTime']])),
+                                    #pd.Series(["probe"] * len(events_df[['rt_correct', 'Probe.OnsetTime']])),
+                                    events_df.loc[:, "Probe.Cue"], # Probe by Cue Regressors
                                     pd.Series(["probe_rt"] * len(events_df[['rt_correct', 'Probe.OnsetTime']].dropna()))
                                     ], ignore_index=True)
             

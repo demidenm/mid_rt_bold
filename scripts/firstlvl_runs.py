@@ -95,7 +95,9 @@ full_contrasts = [
     'FB:LWHit-NeutHit','FB:LWHit-Base',
     'FB:LHit-LMiss', 'FB:LLHit-LLMiss',
     # PROBE
-    'Probe', 'RT'
+    'Probe:All-Base', 'Probe:Win-Loss', 'Probe:Win-Neut', 'Probe:Loss-Neut',
+    # PROBE RT
+    'RT'
 ]
 
 full_contrasts_labs = {
@@ -118,8 +120,12 @@ full_contrasts_labs = {
     'FB:LWHit-Base': 'LargeWinHit',
     'FB:LHit-LMiss': 'LargeLossHit + SmallLossHit - LargeLossMiss - SmallLossMiss',
     'FB:LLHit-LLMiss': 'LargeLossHit - LargeLossMiss',
-    # probe maps
-    'Probe': 'probe',
+    # PROBE
+    'Probe:All-Base': '0.33*probe_win + 0.33*probe_lose + 0.33*probe_neut',
+    'Probe:Win-Loss': 'probe_win - probe_lose',
+    'Probe:Win-Neut': 'probe_win - probe_neut',
+    'Probe:Loss-Neut': 'probe_lose - probe_neut',
+    # PROBE RT
     'RT': 'probe_rt'
 }
 
