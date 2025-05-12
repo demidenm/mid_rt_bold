@@ -1,0 +1,137 @@
+#!/bin/bash
+
+# define variables
+curr_dir=`pwd`
+ses=ses-2YearFollowUpYArm1
+ses_r=2YearFollowUpYArm1
+sub=sub-SUBJECT
+fmriprep=fmriprep_v23_1_4
+task=MID
+n_vols=403
+mask_dir=/home/feczk001/mdemiden/analyses/mid_rt_bold/scripts/brain_mask
+beh_dat="/home/feczk001/mdemiden/slurm_ABCD_s3/Beh_Data"
+tmp_in=/scratch.local/${USER}/siemens_data
+out_fold=/scratch.global/${USER}/midrt_timeextract
+vol_info_file=${out_fold}/files/vol_info.tsv
+script_dir=${curr_dir}/..
+
+if [[ "$ses_r" == "baselineYear1Arm1" ]] ; then
+	s3_bucket=s3://abcd-mriqc-fmriprep/derivatives/${fmriprep}
+elif [[ "$ses_r" == "2YearFollowUpYArm1" ]] ; then
+	s3_bucket=s3://ABCD_BIDS/derivatives/${fmriprep}
+else 
+	echo "wrong session option"
+	exit 1
+fi
+
+# copy data from beh ouput & s3, ignore unnecessary files
+echo "Copying ${task} files for $sub from beh folder & s3 bucket"
+mkdir -p ${out_fold}/data/${sub}/${ses}/func/
+mkdir -p ${out_fold}/data/${sub}/${ses}/files/
+mkdir -p ${tmp_in}/${sub}/${ses}/func/
+
+cp ${beh_dat}/events_to_tsv/${ses_r}_${task}/${sub}_${ses}_* ${out_fold}/data/${sub}/${ses}/func
+
+
+filenames=$(s3cmd ls ${s3_bucket}/${ses}/${sub}/${ses}/func/ \
+                | grep "${task}" \
+                | grep -vE "boldref|aseg_dseg|mask|fsLR|goodvoxels|fsnative|.h5|.gii|nback|rest|SST" \
+                | awk '{ print $NF }')
+
+# Check if the array is empty or not
+echo ${filesnames}
+if [ ${#filenames[@]} -eq 0 ]; then
+	echo "No filenames found or all filenames are zero."
+	exit 1
+else
+	for filename in "${filenames[@]}"; do   
+		echo "Copying ${filename} from ${s3_bucket}/${ses}/${sub}/${ses}/func/"     
+		s3cmd get ${filename} ${tmp_in}/${sub}/${ses}/func/ --skip-existing
+	done
+fi
+
+# get volume info from the preprocessed images
+# Philips/Siemens scan = 411 volumes, Hagler et al "8 frame make up pre-scan" 411-8 = 403
+# GE scanners 5/16, result 419 - 16 & 408 - 5 = 403
+echo "#### Modifying runs .nii and .tsv to match target length ####"
+target_vols=${n_vols}
+declare -A vols_run
+declare -A diff_vols_run
+declare -A len_conf_run
+declare -A newvols_run
+
+# Loop over the runs
+for run in $(seq 1 2); do
+	echo "Modifying Run: ${run} "
+	# Calculate vols and diff_vols
+	vols_run[$run]=$(fslinfo "${tmp_in}/${sub}/${ses}/func/${sub}_${ses}_task-MID_run-0${run}_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz" \
+		| grep -w "dim4" \
+		| awk -F" " '{ print $2 }')
+
+	diff_vols_run[$run]=$((vols_run[$run] - target_vols))
+
+	# Output the difference	
+	echo "Difference from target ${target_vols}. Run${run}: ${diff_vols_run[$run]}"
+
+	# Extract volumes using fslroi and cut fmriprep confound rows
+	fslroi "${tmp_in}/${sub}/${ses}/func/${sub}_${ses}_task-MID_run-0${run}_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz" \
+		"${tmp_in}/${sub}/${ses}/func/${sub}_${ses}_task-MID_run-0${run}_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz" \
+		${diff_vols_run[$run]} ${target_vols}
+
+	remove_run=$((diff_vols_run[$run] + 1))
+	sed -i "2,${remove_run}d" "${tmp_in}/${sub}/${ses}/func/${sub}_${ses}_task-MID_run-0${run}_desc-confounds_timeseries.tsv"
+	len_conf_run[$run]=$(cat "${tmp_in}/${sub}/${ses}/func/${sub}_${ses}_task-MID_run-0${run}_desc-confounds_timeseries.tsv" | wc -l)
+
+	# new vols calc
+	newvols_run[$run]=$(fslinfo "${tmp_in}/${sub}/${ses}/func/${sub}_${ses}_task-MID_run-0${run}_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz" \
+                | grep -w "dim4" \
+                | awk -F" " '{ print $2 }')
+done
+
+# Output summary statistics
+[ ! -d ${file_out} ] && echo "analyses out directory exists" | mkdir -p ${file_out}
+
+echo
+echo "SUMMARY STATISTICS:"
+echo -e "run1_dim4 = ${vols_run[1]}\trun2_dim4 = ${vols_run[2]}\nrun1_vols_cut = ${diff_vols_run[1]}\trun2_vols_cut = ${diff_vols_run[2]}"
+echo -e "conf_len_run1 = ${len_conf_run[1]}\tconf_len_run2 = ${len_conf_run[2]}"
+
+# Append summary statistics to the volume info file
+echo -e "${sub}\t${vols_run[1]}\t${newvols_run[1]}\t${vols_run[2]}\t${newvols_run[2]}\t${diff_vols_run[1]}\t${diff_vols_run[2]}\t${len_conf_run[1]}\t${len_conf_run[2]}" >> ${vol_info_file}
+echo
+
+# Check if the value in ${newvols_run[1]} is less than target
+if (( ${newvols_run[1]} < ${target_vols} )); then
+    echo "Failed, volumes below expected ${target_vols}. Check data."
+# Check if the value in ${newvols_run[2]} is less than target
+elif (( ${newvols_run[2]} < ${target_vols} )); then
+    echo "Failed, volumes below expected ${target_vols}. Check data."
+else
+    echo "Values are == ${target_vols}. Proceeding..."
+fi
+
+
+# run python script
+echo "Sample Type: ${sample}"
+echo "Run: ${type}"
+echo "Subject List: ${sub_list}"
+echo "Fixed lvl input: ${tmp_dir}"
+echo "Group scratch out: ${group_scratch}"
+echo "Group oak out: ${group_out}"
+
+python ${script_dir}/extract_roi_timeseries.py \
+		--sub ${sub} \
+		--inp_dir ${tmp_in} \
+		--task ${task} \
+		--ses ${ses_r} \
+		--mask_dir ${mask_dir} \
+		--output "${out_fold}/data"
+
+timeseries_run=$?
+
+if [ ${timeseries_run} -eq 0 ]; then
+	echo "Python timeseries est  completed successfully!"
+else
+	echo "Python timeseries est  failed."
+	exit 1
+fi

@@ -14,7 +14,7 @@ fi
 n=${count_start}
 cat $subj_ids | while read line ; do
 	subj=$(echo $line | awk -F" " '{ print $1 }' | awk -F"-" '{ print $2 }')
-	sed -e "s|SUBJECT|${subj}|g; " ./templates/abcd_trimmedpreproc.sh > ./batch_jobs/trimvols${n}
+	sed -e "s|SUBJECT|${subj}|g; " ./templates/abcd_trimmedpreproc.txt > ./batch_jobs/trimvols${n}
 		n=$((n+1))
 
 done
