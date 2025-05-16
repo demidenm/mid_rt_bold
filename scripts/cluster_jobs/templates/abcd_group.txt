@@ -1,6 +1,7 @@
 # Define directories
 curr_dir=`pwd`
 script_dir=${curr_dir}/..
+uv_project_path="${curr_dir}/../../"
 sample=SAMPLE
 task=TASK
 run=RUN
@@ -44,7 +45,8 @@ echo "Fixed lvl input: ${tmp_dir}"
 echo "Group scratch out: ${group_scratch}"
 echo "Group oak out: ${group_out}"
 
-python ${script_dir}/group_estimate.py \
+uv --project "${uv_project_path}" run \
+	python ${script_dir}/group_estimate.py \
 		--sample ${sample} \
 		--task ${task} \
 		--run ${run} \

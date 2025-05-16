@@ -2,6 +2,7 @@
 
 # define variables
 curr_dir=`pwd`
+uv_project_path="${curr_dir}/../../"
 ses=ses-SESSION
 ses_r=SESSION
 sub=sub-SUBJECT
@@ -118,7 +119,8 @@ echo "data_preproc: ${tmp_in}"
 echo "analysis_out: ${firstlvl_fold}"
 
 echo "	Runnin First & Fixed Effect  Models"
-python ${script_dir}/firstlvl_runs.py --sample abcd \
+uv --project "${uv_project_path}" run \
+	python ${script_dir}/firstlvl_runs.py --sample abcd \
 					--sub ${sub} \
 					--task ${task} \
 					--ses $ses_r \

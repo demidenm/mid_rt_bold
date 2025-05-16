@@ -1,5 +1,6 @@
 # Define directories
 curr_dir=`pwd`
+uv_project_path="${curr_dir}/../../"
 script_dir=${curr_dir}/..
 sample=SAMPLE
 task=TASK
@@ -47,7 +48,8 @@ echo "Fixed lvl input: ${tmp_dir}"
 echo "Group scratch out: ${group_scratch}"
 echo "Group oak out: ${group_out}"
 
-python ${script_dir}/group_diff.py \
+uv --project "${uv_project_path}" run \
+	python ${script_dir}/group_diff.py \
 		--sample ${sample} \
 		--task ${task} \
 		--run ${run} \

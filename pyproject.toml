@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mid_rt_bold"
+version = "0.1.0"
+description = "Environment for reproducibility of MID RT Paper"
+authors = [
+    {name = "Michael Demidenko", email = "demidenko.michael@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "numpy==1.23.2",        # version compatible with matplotlib / nilearn vrs
+    "pandas",
+    "nibabel",
+    "nilearn==0.9.2",
+    "matplotlib==3.3.4",
+    "scipy",
+    "statsmodels",
+    "tqdm",
+    "pyrelimri",  
+    "pynv",       
+    "joblib",
+    "seaborn==0.12.2",
+    "ipython",
+    "uuid",
+    "jupyter",
+    "notebook",
+    "jupyterlab"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "isort",
+    "flake8",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = "E203"
+exclude = [".git", "__pycache__", "build", "dist"]

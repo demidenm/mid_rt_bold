@@ -2,6 +2,7 @@
 
 # define variables
 curr_dir=`pwd`
+uv_project_path="${curr_dir}/../../"
 ses="2YearFollowUpYArm1"
 run=RUN
 task=TASK
@@ -11,15 +12,17 @@ inp_deriv="/scratch.global/${USER}/siemens_scanner/subjects"
 inp_beh="/scratch.global/${USER}/siemens_scanner/subjects"
 output="/scratch.global/${USER}/siemens_scanner/files"
 script_dir="${curr_dir}/.."
-python ${script_dir}/raw_predicted_timeseries.py \
-                                                --inp_deriv ${inp_deriv} \
-                                                --inp_beh ${inp_beh} \
-                                                --task ${task} \
-                                                --ses ${ses} \
-                                                --roi_label ${roi_label} \
-                                                --roi_mask ${roi_mask} \
-                                                --run ${run} \
-                                                --output ${output}
+
+uv --project "${uv_project_path}" run \
+	python ${script_dir}/raw_predicted_timeseries.py \
+                --inp_deriv ${inp_deriv} \
+                --inp_beh ${inp_beh} \
+                --task ${task} \
+                --ses ${ses} \
+                --roi_label ${roi_label} \
+                --roi_mask ${roi_mask} \
+                --run ${run} \
+                --output ${output}
 cuetrplt_error=$?
 if [ ${cuetrplt_error} -eq 0 ]; then
         echo "Python tr-by-tr plotting completed successfully! Saved in ${output} "

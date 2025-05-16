@@ -2,6 +2,7 @@
 
 # define variables
 curr_dir=`pwd`
+uv_project_path="${curr_dir}/../../"
 ses=ses-2YearFollowUpYArm1
 ses_r=2YearFollowUpYArm1
 sub=sub-SUBJECT
@@ -119,7 +120,8 @@ echo "Fixed lvl input: ${tmp_dir}"
 echo "Group scratch out: ${group_scratch}"
 echo "Group oak out: ${group_out}"
 
-python ${script_dir}/extract_roi_timeseries.py \
+uv --project "${uv_project_path}" run \
+	python ${script_dir}/extract_roi_timeseries.py \
 		--sub ${sub} \
 		--inp_dir ${tmp_in} \
 		--task ${task} \
