@@ -49,56 +49,108 @@ in_dir = args.input
 scratch_out = args.output
 
 
-# create z-stat map effect / sqrt(var)
-# find all images for a and b, assert IDs same for each beta / var
+# add scacling factor computed form the jupyter notebook for each contrast type
+saturated_scale = 0.4004
+cueyesderiv_scale = 0.0034
+contrast_scaling = {
+    # ANTICIPATORY CONTRASTS
+    'Cue:LW-Neut': {
+        'mod-Saturated': saturated_scale / 1,      
+        'mod-CueYesDeriv': cueyesderiv_scale / 1,
+    },
+    'Cue:W-Neut': {
+        'mod-Saturated': saturated_scale / 2,     
+        'mod-CueYesDeriv': cueyesderiv_scale / 2,
+    },
+    'Cue:LL-Neut': {
+        'mod-Saturated': saturated_scale / 1,      
+        'mod-CueYesDeriv': cueyesderiv_scale / 1,
+    },
+    'Cue:L-Neut': {
+        'mod-Saturated': saturated_scale / 2,      
+        'mod-CueYesDeriv': cueyesderiv_scale / 2,
+    },
+    'Cue:LW-Base': {
+        'mod-Saturated': saturated_scale / 1,     
+        'mod-CueYesDeriv': cueyesderiv_scale / 1,
+    },
+    
+    # FEEDBACK CONTRASTS
+    'FB:WHit-WMiss': {
+        'mod-Saturated': saturated_scale / 2,      # [1 1 -1 -1] -> sum of positive = 2
+        'mod-CueYesDeriv': cueyesderiv_scale / 2,
+    },
+    'FB:LWHit-LWMiss': {
+        'mod-Saturated': saturated_scale / 1,      # [1 -1] -> sum of positive = 1
+        'mod-CueYesDeriv': cueyesderiv_scale / 1,
+    },
+    'FB:LWHit-NeutHit': {
+        'mod-Saturated': saturated_scale / 1,      # [1 -1] -> sum of positive = 1
+        'mod-CueYesDeriv': cueyesderiv_scale / 1,
+    },
+    'FB:LWHit-Base': {
+        'mod-Saturated': saturated_scale / 1,      # [1] -> sum of positive = 1
+        'mod-CueYesDeriv': cueyesderiv_scale / 1,
+    },
+    'FB:LHit-LMiss': {
+        'mod-Saturated': saturated_scale / 2,      # [1 1 -1 -1] -> sum of positive = 2
+        'mod-CueYesDeriv': cueyesderiv_scale / 2,
+    },
+    'FB:LLHit-LLMiss': {
+        'mod-Saturated': saturated_scale / 1,      # [1 -1] -> sum of positive = 1
+        'mod-CueYesDeriv': cueyesderiv_scale / 1,
+    },
+}
+
+# find all beta images for a and b, assert IDs match before scaling
 
 # [a] mod
 a_mod_betas = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_contrast-{contrast}_{a_mod}_stat-effect.nii.gz'))
-a_mod_vars = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_contrast-{contrast}_{a_mod}_stat-var.nii.gz'))
 a_beta_ids = [os.path.basename(path).split('_')[0] for path in a_mod_betas]
-a_var_ids = [os.path.basename(path).split('_')[0] for path in a_mod_vars]
-# [b] mod
 
+# [b] mod
 b_mod_betas = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_contrast-{contrast}_{b_mod}_stat-effect.nii.gz'))
-b_mod_vars = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_contrast-{contrast}_{b_mod}_stat-var.nii.gz'))
 b_beta_ids = [os.path.basename(path).split('_')[0] for path in b_mod_betas]
-b_var_ids = [os.path.basename(path).split('_')[0] for path in b_mod_vars]
-assert set(a_beta_ids) == set(a_var_ids), f"Subject IDs don't match between {a_mod} beta and variance maps"
-assert set(b_beta_ids) == set(b_var_ids), f"Subject IDs don't match between {b_mod} beta and variance maps"
+
 assert set(a_beta_ids) == set(b_beta_ids), f"Subject IDs don't match between {a_mod} and {b_mod} maps"
 
-# loop through maps and make z-stat map for each subject
+# scaling factors for this contrast
+if contrast in contrast_scaling:
+    a_scale = contrast_scaling[contrast][a_mod]
+    b_scale = contrast_scaling[contrast][b_mod]
+    print(f"Scaling {contrast}: {a_mod}={a_scale:.4f}, {b_mod}={b_scale:.4f}")
+else:
+    print(f"Warning: No scaling factor found for contrast {contrast}, using 1.0")
+    a_scale = 1.0
+    b_scale = 1.0
+
+# Get dictionary of mapys, loop through maps and scale beta maps for each subject
 a_beta_dict = {os.path.basename(path).split('_')[0]: path for path in a_mod_betas}
-a_var_dict = {os.path.basename(path).split('_')[0]: path for path in a_mod_vars}
 b_beta_dict = {os.path.basename(path).split('_')[0]: path for path in b_mod_betas}
-b_var_dict = {os.path.basename(path).split('_')[0]: path for path in b_mod_vars}
 
 for subject_id in a_beta_ids:
-    print(f"Creating z-stat for subject {subject_id}...")
-
-    # Calculate z-statistic maps (beta / sqrt(variance)) using math_img
-    a_zstat_img = math_img(
-        "beta / np.sqrt(np.maximum(var, 1e-6))",  # tiny epsilon to avoid division by zero
-        beta=a_beta_dict[subject_id],
-        var=a_var_dict[subject_id]
+    print(f"Processing subject {subject_id}: scaling beta maps")
+    
+    # Scale beta maps: beta * scale
+    a_scaled_img = math_img(
+        f"beta * {a_scale}",
+        beta=a_beta_dict[subject_id]
     )
     a_beta_filename = os.path.basename(a_beta_dict[subject_id])
-    a_zstat_filename = os.path.join(in_dir, a_beta_filename.replace('stat-effect', 'stat-zstat'))
-    a_zstat_img.to_filename(a_zstat_filename)
-
-    b_zstat_img = math_img(
-        "beta / np.sqrt(np.maximum(var, 1e-6))",
-        beta=b_beta_dict[subject_id],
-        var=b_var_dict[subject_id]
+    a_scaled_filename = os.path.join(in_dir, a_beta_filename.replace('stat-effect', 'stat-effect-scaled'))
+    a_scaled_img.to_filename(a_scaled_filename)
+    
+    b_scaled_img = math_img(
+        f"beta * {b_scale}",
+        beta=b_beta_dict[subject_id]
     )
     b_beta_filename = os.path.basename(b_beta_dict[subject_id])
-    b_zstat_filename = os.path.join(in_dir, b_beta_filename.replace('stat-effect', 'stat-zstat'))
-    b_zstat_img.to_filename(b_zstat_filename)
+    b_scaled_filename = os.path.join(in_dir, b_beta_filename.replace('stat-effect', 'stat-effect-scaled'))
+    b_scaled_img.to_filename(b_scaled_filename)
 
-
-# find all contrast fixed effect maps for model permutation across subjects and get IDs to match to lists
-a_mod_list = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_contrast-{contrast}_{a_mod}_stat-zstat.nii.gz'))
-b_mod_list = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_contrast-{contrast}_{b_mod}_stat-zstat.nii.gz'))
+# find all scaled beta maps for further processing
+a_mod_list = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_contrast-{contrast}_{a_mod}_stat-effect-scaled.nii.gz'))
+b_mod_list = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_contrast-{contrast}_{b_mod}_stat-effect-scaled.nii.gz'))
 a_mod_ids = [os.path.basename(path).split('_')[0] for path in a_mod_list]
 b_mod_ids = [os.path.basename(path).split('_')[0] for path in b_mod_list]
 num_maps = len(a_mod_list)

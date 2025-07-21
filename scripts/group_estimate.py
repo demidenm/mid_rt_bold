@@ -58,6 +58,7 @@ def group_onesample(fixedeffect_paths: list, session: str, task_type: str,
                                       design_matrix=design_matrix)
     # contrasts mean 'int' and corr with mRT 'rt
     for con in con_array:
+        # Save t-statistic map
         tstat_map = sec_lvl_model.compute_contrast(
             second_level_contrast=con,
             second_level_stat_type='t',
@@ -66,6 +67,26 @@ def group_onesample(fixedeffect_paths: list, session: str, task_type: str,
         tstat_out = f'{group_outdir}/subs-{n_maps}_ses-{session}_task-{task_type}_' \
                     f'contrast-{contrast_type}_{model_lab}_stat-tstat_{con}.nii.gz'
         tstat_map.to_filename(tstat_out)
+        
+        # Save beta estimate map
+        beta_map = sec_lvl_model.compute_contrast(
+            second_level_contrast=con,
+            second_level_stat_type='t',
+            output_type='effect_size'
+        )
+        beta_out = f'{group_outdir}/subs-{n_maps}_ses-{session}_task-{task_type}_' \
+                   f'contrast-{contrast_type}_{model_lab}_stat-beta_{con}.nii.gz'
+        beta_map.to_filename(beta_out)
+        
+        # Save variance estimate map
+        var_map = sec_lvl_model.compute_contrast(
+            second_level_contrast=con,
+            second_level_stat_type='t',
+            output_type='effect_variance'
+        )
+        var_out = f'{group_outdir}/subs-{n_maps}_ses-{session}_task-{task_type}_' \
+                  f'contrast-{contrast_type}_{model_lab}_stat-var_{con}.nii.gz'
+        var_map.to_filename(var_out)
 
 
 def str2bool(v):
@@ -110,6 +131,59 @@ run_randomise = args.randomise
 in_dir = args.input
 scratch_out = args.output
 
+# add scacling factor computed form the jupyter notebook for each contrast type
+saturated_scale = 0.4004
+cueyesderiv_scale = 0.0034
+contrast_scaling = {
+    # ANTICIPATORY CONTRASTS
+    'Cue:LW-Neut': {
+        'mod-Saturated': saturated_scale / 1,      
+        'mod-CueYesDeriv': cueyesderiv_scale / 1,
+    },
+    'Cue:W-Neut': {
+        'mod-Saturated': saturated_scale / 2,     
+        'mod-CueYesDeriv': cueyesderiv_scale / 2,
+    },
+    'Cue:LL-Neut': {
+        'mod-Saturated': saturated_scale / 1,      
+        'mod-CueYesDeriv': cueyesderiv_scale / 1,
+    },
+    'Cue:L-Neut': {
+        'mod-Saturated': saturated_scale / 2,      
+        'mod-CueYesDeriv': cueyesderiv_scale / 2,
+    },
+    'Cue:LW-Base': {
+        'mod-Saturated': saturated_scale / 1,     
+        'mod-CueYesDeriv': cueyesderiv_scale / 1,
+    },
+    
+    # FEEDBACK CONTRASTS
+    'FB:WHit-WMiss': {
+        'mod-Saturated': saturated_scale / 2,      # [1 1 -1 -1] -> sum of positive = 2
+        'mod-CueYesDeriv': cueyesderiv_scale / 2,
+    },
+    'FB:LWHit-LWMiss': {
+        'mod-Saturated': saturated_scale / 1,      # [1 -1] -> sum of positive = 1
+        'mod-CueYesDeriv': cueyesderiv_scale / 1,
+    },
+    'FB:LWHit-NeutHit': {
+        'mod-Saturated': saturated_scale / 1,      # [1 -1] -> sum of positive = 1
+        'mod-CueYesDeriv': cueyesderiv_scale / 1,
+    },
+    'FB:LWHit-Base': {
+        'mod-Saturated': saturated_scale / 1,      # [1] -> sum of positive = 1
+        'mod-CueYesDeriv': cueyesderiv_scale / 1,
+    },
+    'FB:LHit-LMiss': {
+        'mod-Saturated': saturated_scale / 2,      # [1 1 -1 -1] -> sum of positive = 2
+        'mod-CueYesDeriv': cueyesderiv_scale / 2,
+    },
+    'FB:LLHit-LLMiss': {
+        'mod-Saturated': saturated_scale / 1,      # [1 -1] -> sum of positive = 1
+        'mod-CueYesDeriv': cueyesderiv_scale / 1,
+    },
+}
+
 # mRTs for subjects, averaged across runs
 sub_rt_df = pd.read_csv(rt_file, sep=',')
 sub_sites_df = pd.read_csv(site_file, sep=',')
@@ -117,9 +191,38 @@ sub_sites_df = pd.read_csv(site_file, sep=',')
 # find all contrast fixed effect maps for model permutation across subjects
 list_maps = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*'
                         f'contrast-{contrast}_{model}_stat-effect.nii.gz'))
+sub_ids = [os.path.basename(path).split('_')[0] for path in list_maps]
+beta_dict = {os.path.basename(path).split('_')[0]: path for path in list_maps}
+
+# apply contrast/model scaling
+# scaling factors for this contrast
+try:
+    scale_factor = contrast_scaling[contrast][model]
+    print(f"Scaling {contrast}: {model}={scale_factor:.4f}")
+except KeyError:
+    print(f"Warning: No scaling factor found for contrast {contrast}, model {model}, using 1.0")
+    scale_factor = 1.0
+
+
+for subject_id in sub_ids:
+    print(f"Processing subject {subject_id}: scaling beta maps")
+    
+    # Scale beta maps: beta * scale
+    scaled_img = math_img(
+        f"beta * {scale_factor}",
+        beta=beta_dict[subject_id]
+    )
+    beta_filename = os.path.basename(beta_dict[subject_id])
+    scaled_filename = os.path.join(in_dir, beta_filename.replace('stat-effect', 'stat-effect-scaled'))
+    scaled_img.to_filename(scaled_filename)
+
+# grab scaled maps
+list_maps = sorted(glob(f'{in_dir}/*_ses-{ses}_task-{task}_*'
+                        f'contrast-{contrast}_{model}_stat-effect-scaled.nii.gz'))
+sub_ids = [os.path.basename(path).split('_')[0] for path in list_maps]
+beta_dict = {os.path.basename(path).split('_')[0]: path for path in list_maps}
 
 # subset id's RT times to match
-sub_ids = [os.path.basename(path).split('_')[0] for path in list_maps]
 subset_df = sub_rt_df[sub_rt_df['Subject'].isin(sub_ids)].copy()
 subset_df = subset_df.set_index('Subject').loc[sub_ids].reset_index()  # ensure index sorts same as IDs
 assert (subset_df['Subject'].values ==

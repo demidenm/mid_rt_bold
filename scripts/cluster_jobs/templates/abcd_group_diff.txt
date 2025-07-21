@@ -78,7 +78,7 @@ rsync -av --remove-source-files ${group_scratch}/ ${group_out}/
 cat ${sub_list} | while read line ; do 
 	sub=$(echo $line | awk -F" " '{ print $1 }' )
 	if [ ${type} == 'session' ]; then
-		rsync -av --remove-source-files ${tmp_dir}/inp/${sub}_ses-${ses}_task-${task}_contrast-${contrast}_*_stat-zstat.nii.gz  ${fixed_in}/ses-${ses}/${sub}/
+		rsync -av --remove-source-files ${tmp_dir}/inp/${sub}_ses-${ses}_task-${task}_contrast-${contrast}_*_effect-scaled.nii.gz  ${fixed_in}/ses-${ses}/${sub}/
 		echo "sub: ${sub} z-stat sync'd to ${fixed_in}/ses-${ses}/${sub}/"
 
 	else
