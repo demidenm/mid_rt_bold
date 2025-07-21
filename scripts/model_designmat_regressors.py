@@ -727,6 +727,16 @@ def permutation_test_with_clustering(
     obs_t_map_3d = np.zeros(orig_shape)
     obs_t_map_3d[mask_3d] = t_stats
 
+    # Create 3D maps for mean and stdev
+    mean_map_3d = np.zeros(orig_shape)
+    mean_map_3d[mask_3d] = mean_data
+    stderr_map_3d = np.zeros(orig_shape)
+    stderr_map_3d[mask_3d] = (std_data / np.sqrt(n_subjects)) # get standard error of the mean
+
+    # Create mean and stdev images
+    mean_img = nib.Nifti1Image(mean_map_3d, mask_img.affine)
+    stderr_img = nib.Nifti1Image(stderr_map_3d, mask_img.affine)
+
     # cluster map for observed data
     cluster_map_obs, neg_pos_arrays = get_cluster_2sided(
         t_stats, mask_3d, cluster_forming_threshold=cluster_forming_threshold
@@ -747,6 +757,8 @@ def permutation_test_with_clustering(
     
     return {
         'perm-tstat': t_stat_img,
+        'mean': mean_img,
+        'stderror': stderr_img,
         'perm-sigclustermask': sig_cluster_mask_img,
         'maxclustersizethreshold': max_cluster_size_threshold,
         'negposarrays': neg_pos_arrays,
